@@ -14,12 +14,34 @@ type Cache struct {
 	m     *sync.RWMutex
 }
 
-func New() *Cache {
-	return &Cache{
-		capacity: 1000,
+type Config struct {
+	capacity int
+}
+
+type Option func(c *Config)
+
+func New(opts ...Option) *Cache {
+	conf := &Config{}
+
+	for _, opt := range opts {
+		opt(conf)
+	}
+
+	c := &Cache{
+		capacity: conf.capacity,
 		items:    make(map[string]*element),
 		list:     newDoublyLinkedList(),
 	}
+
+	if c.capacity == 0 {
+		c.capacity = 1000
+	}
+
+	return c
+}
+
+func WithCap(capacity int) Option {
+	return func(c *Config) { c.capacity = capacity }
 }
 
 // Get returns value by given key.
