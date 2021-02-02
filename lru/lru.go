@@ -31,6 +31,7 @@ func New(opts ...Option) *Cache {
 		capacity: conf.capacity,
 		items:    make(map[string]*element),
 		list:     newDoublyLinkedList(),
+		m:        &sync.RWMutex{},
 	}
 
 	if c.capacity == 0 {
