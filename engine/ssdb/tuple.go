@@ -1,5 +1,6 @@
 package ssdb
 
+// Tuple represents a row in a table. The length varies.
 type Tuple struct {
 	Data []TupleData
 }
