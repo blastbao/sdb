@@ -6,9 +6,9 @@ type Tuple struct {
 }
 
 type TupleData struct {
-	typ         Type
-	int32Val    int32
-	char1024Val [1024]byte // TODO: support multi-byte character
+	typ       Type
+	int32Val  int32
+	char64Val [64]byte // TODO: support multi-byte character
 }
 
 type Type int
