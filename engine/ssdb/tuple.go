@@ -14,6 +14,7 @@ type TupleData struct {
 type Type int
 
 const (
+	// TODO: support more types
 	Int32 Type = iota + 1
 	Char1024
 )
