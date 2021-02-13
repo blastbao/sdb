@@ -1,5 +1,11 @@
 package ssdb
 
+import (
+	"encoding/gob"
+	"fmt"
+	"io"
+)
+
 // Tuple represents a row in a table. The length varies.
 type Tuple struct {
 	Data []TupleData
@@ -18,3 +24,12 @@ const (
 	Int32 Type = iota + 1
 	Char64
 )
+
+// Serialize encodes t into w.
+func (t *Tuple) Serialize(w io.Writer) error {
+	if err := gob.NewEncoder(w).Encode(t); err != nil {
+		return fmt.Errorf("encode tuple by encoding/gob: %w", err)
+	}
+
+	return nil
+}
