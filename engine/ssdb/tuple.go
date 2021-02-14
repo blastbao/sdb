@@ -33,3 +33,13 @@ func (t *Tuple) Serialize(w io.Writer) error {
 
 	return nil
 }
+
+// Deserialize decodes r into t.
+// Note that t is overwritten.
+func (t *Tuple) Deserialize(r io.Reader) error {
+	if err := gob.NewDecoder(r).Decode(t); err != nil {
+		return fmt.Errorf("decode tuple by encoding/gob: %w", err)
+	}
+
+	return nil
+}
