@@ -6,11 +6,12 @@ import (
 	"io"
 )
 
-// Tuple represents a row in a table. The length varies.
+// Tuple represents a row in a table. The size varies.
 type Tuple struct {
 	Data []TupleData
 }
 
+// TupleData represents a column in a row.
 type TupleData struct {
 	Typ       Type
 	Int32Val  int32
