@@ -1,9 +1,9 @@
 package ssdb
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
-	"io"
 )
 
 // Tuple represents a row in a table. The size varies.
@@ -26,13 +26,14 @@ const (
 	Char64
 )
 
-// Serialize encodes t into w.
-func (t *Tuple) Serialize(w io.Writer) error {
-	if err := gob.NewEncoder(w).Encode(t); err != nil {
-		return fmt.Errorf("encode tuple by encoding/gob: %w", err)
+// Serialize encodes given t into byte slice.
+func SerializeTuple(t Tuple) ([]byte, error) {
+	buff := bytes.Buffer{}
+	if err := gob.NewEncoder(&buff).Encode(t); err != nil {
+		return nil, fmt.Errorf("encode tuple by encoding/gob: %w", err)
 	}
 
-	return nil
+	return buff.Bytes(), nil
 }
 
 // Deserialize decodes r into t.
