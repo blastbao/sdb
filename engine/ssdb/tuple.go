@@ -36,12 +36,13 @@ func SerializeTuple(t Tuple) ([]byte, error) {
 	return buff.Bytes(), nil
 }
 
-// Deserialize decodes r into t.
-// Note that t is overwritten.
-func (t *Tuple) Deserialize(r io.Reader) error {
-	if err := gob.NewDecoder(r).Decode(t); err != nil {
-		return fmt.Errorf("decode tuple by encoding/gob: %w", err)
+// Deserialize decodes given byte slice to a tuple.
+func DeserializeTuple(b []byte) (Tuple, error) {
+	t := Tuple{}
+	br := bytes.NewReader(b)
+	if err := gob.NewDecoder(br).Decode(&t); err != nil {
+		return t, fmt.Errorf("decode tuple by encoding/gob: %w", err)
 	}
 
-	return nil
+	return t, nil
 }
