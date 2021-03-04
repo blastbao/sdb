@@ -44,7 +44,7 @@ func SerializePage(p *Page) ([4096]byte, error) {
 
 	buff := bytes.Buffer{}
 	if err := gob.NewEncoder(&buff).Encode(header); err != nil {
-		return bs, fmt.Errorf("encode page by encoding/gob: %w", err)
+		return bs, fmt.Errorf("encode page header by encoding/gob: %w", err)
 	}
 
 	headerLength := buff.Len()
@@ -61,7 +61,7 @@ func DeserializePage(bs [4096]byte) (*Page, error) {
 	var header PageHeader
 	buff := bytes.NewReader(bs[1 : 1+headerLength])
 	if err := gob.NewDecoder(buff).Decode(&header); err != nil {
-		return nil, fmt.Errorf("decode page by encoding/gob: %w", err)
+		return nil, fmt.Errorf("decode page header by encoding/gob: %w", err)
 	}
 
 	last := 4096
