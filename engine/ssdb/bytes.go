@@ -12,3 +12,11 @@ func bytesToUint16(bs []byte) uint16 {
 func bytesToUint32(bs []byte) uint32 {
 	return byteOrder.Uint32(bs)
 }
+
+func putUint16OnBytes(bs []byte, v uint16) {
+	byteOrder.PutUint16(bs, v)
+}
+
+func putUint32OnBytes(bs []byte, v uint32) {
+	byteOrder.PutUint32(bs, v)
+}
