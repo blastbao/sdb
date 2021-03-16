@@ -6,24 +6,46 @@ import (
 	"fmt"
 )
 
-// Page contains multiple tuples in one sequential bytes on the disk.
+const PageSize = 16 * 1024 // 16KB
+
+// Page manages multiple tuples as slotted page.
+// The layout looks like below:
+// -----------------------------
+// |xxxx|xx|xxxx|xxxx|xxxx|xxxx| // header starts from the head
+// |xxxx|xxxx|... ->           |
+// |        [free space]       |
+// |                 <- ...|xxx|
+// |xxxxxx|xxxxxxx|xxxxxxxxxxxx| // tuples starts from the bottom
+// -----------------------------
+//
+// header layout:
+// |page_id(4byte)|tuples_count(2byte)|slot1(2byte)|slot2(2byte)|slot3(2byte)|...|slotN(2byte)|
+// note: N is the same as tuples_count
+//
+// slot layout:
+// |offset(2byte)|length(2byte)|
+//
+// The first slot represents of the first tuple. Because the tuples are placed from bottom to head,
+// the first slot's offset is the starting point of the last section of the byte stream.
+//
+// This layout cannot avoid a few empty bytes between the tail of header and the head of tuples.
+//
+// tuple layout: see tuple.go
 type Page struct {
-	Header *PageHeader
-	Tuples []Tuple
+	bs [PageSize]byte
 }
 
-type PageHeader struct {
-	TupleCount     uint8
-	TupleLocations []uint16
-	FreeSpaceEnd   uint16
+type slot struct {
+	offset uint16 // [2]byte
+	length uint16 // [2]byte
 }
 
-func SerializePage(p *Page) ([4096]byte, error) {
-	var bs [4096]byte
+type pageHeader struct {
+	id          uint32 // [4]byte
+	tuplesCount uint16 // [2]byte
+	slots       []slot
+}
 
-	if p.Header == nil {
-		p.Header = &PageHeader{}
-	}
 
 	tupleBytes := make([][]byte, len(p.Tuples))
 	for i := 0; i < len(p.Tuples); i++ {
