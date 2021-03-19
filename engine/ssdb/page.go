@@ -46,58 +46,66 @@ type pageHeader struct {
 	slots       []slot
 }
 
-
-	tupleBytes := make([][]byte, len(p.Tuples))
-	for i := 0; i < len(p.Tuples); i++ {
-		b, err := SerializeTuple(p.Tuples[i])
-		if err != nil {
-			return bs, fmt.Errorf("serialize tuple: %w", err)
-		}
-		tupleBytes[i] = b
-	}
-
-	header := &PageHeader{TupleCount: uint8(len(p.Tuples)), FreeSpaceEnd: 4096, TupleLocations: make([]uint16, len(p.Tuples))}
-
-	for i := 0; i < len(tupleBytes); i++ {
-		header.TupleLocations[i] = uint16(int(header.FreeSpaceEnd) - len(tupleBytes[i]))
-		copy(bs[header.TupleLocations[i]:header.FreeSpaceEnd], tupleBytes[i])
-		header.FreeSpaceEnd -= uint16(len(tupleBytes[i]))
-	}
-
-	buff := bytes.Buffer{}
-	if err := gob.NewEncoder(&buff).Encode(header); err != nil {
-		return bs, fmt.Errorf("encode page header by encoding/gob: %w", err)
-	}
-
-	headerLength := buff.Len()
-
-	copy(bs[1:1+buff.Len()], buff.Bytes())
-	bs[0] = byte(headerLength)
-
-	return bs, nil
+func NewPage(id uint32) *Page {
+	bs := [PageSize]byte{}
+	putUint32OnBytes(bs[0:], id)
+	putUint16OnBytes(bs[4:], 0) // tuple count is initially 0
+	return &Page{bs: bs}
 }
 
-func DeserializePage(bs [4096]byte) (*Page, error) {
-	headerLength := int(bs[0])
-
-	var header PageHeader
-	buff := bytes.NewReader(bs[1 : 1+headerLength])
-	if err := gob.NewDecoder(buff).Decode(&header); err != nil {
-		return nil, fmt.Errorf("decode page header by encoding/gob: %w", err)
+func (h *pageHeader) encode() []byte {
+	length := 4 + 2 + len(h.slots)*4
+	bs := make([]byte, length)
+	putUint32OnBytes(bs[0:], h.id)
+	putUint16OnBytes(bs[4:], h.tuplesCount)
+	for i := 0; i < len(h.slots); i++ {
+		putUint16OnBytes(bs[6+i*4:], h.slots[i].offset)
+		putUint16OnBytes(bs[8+i*4:], h.slots[i].length)
 	}
 
-	last := 4096
-	tuples := make([]Tuple, header.TupleCount)
-	for i := 0; i < len(header.TupleLocations); i++ {
-		tb := bs[header.TupleLocations[i]:last]
-		t, err := DeserializeTuple(tb)
-		if err != nil {
-			return nil, fmt.Errorf("deserialize tuple: %w", err)
-		}
+	return bs
+}
 
-		tuples[i] = t
-		last -= len(tb)
+func (p *Page) decodeHeader() pageHeader {
+	h := pageHeader{}
+	h.id = bytesToUint32(p.bs[0:])
+	h.tuplesCount = bytesToUint16(p.bs[4:])
+	h.slots = make([]slot, h.tuplesCount)
+
+	for i := 0; i < int(h.tuplesCount); i++ {
+		s := slot{}
+		o := i * 4 // offset
+		s.offset = bytesToUint16(p.bs[6+o:])
+		s.length = bytesToUint16(p.bs[8+o:])
+		h.slots[i] = s
 	}
 
-	return &Page{Header: &header, Tuples: tuples}, nil
+	return h
+}
+
+func (p *Page) AppendTuple(t Tuple) error {
+	tb := SerializeTuple(t)
+
+	header := p.decodeHeader()
+	headerLength := 4 + 2 + len(header.slots)*4
+
+	last := uint16(PageSize)
+	if header.tuplesCount != 0 {
+		last = header.slots[header.tuplesCount-1].offset
+	}
+
+	availableSpace := last - uint16(headerLength) - 4 // make sure tuple and its slot can be placed
+	if int(availableSpace) < len(tb) {
+		return fmt.Errorf("no enough space on the page")
+	}
+
+	// place tuple
+	start := int(last) - len(tb)
+	copy(p.bs[start:last], tb)
+
+	header.tuplesCount++
+	header.slots = append(header.slots, slot{offset: uint16(start), length: uint16(len(tb))})
+	copy(p.bs[0:], header.encode())
+
+	return nil
 }
