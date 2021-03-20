@@ -1,8 +1,6 @@
 package ssdb
 
 import (
-	"bytes"
-	"encoding/gob"
 	"fmt"
 )
 
