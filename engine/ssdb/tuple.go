@@ -7,6 +7,11 @@ import (
 )
 
 // Tuple represents a row in a table. The size varies.
+// The tuple layout looks like below:
+// |Type(4byte)|value(Nbyte)|Type(4byte)|value(Nbyte)|...|Type(4byte)|value(Nbyte)|
+// The N depends on the type.
+// e.g. When the type is int32, the length is 4byte (=32bit).
+//      When the type is [64]byte, the length is 64 byte.
 type Tuple struct {
 	Data []TupleData
 }
@@ -18,6 +23,8 @@ type TupleData struct {
 	Byte64Val [64]byte
 }
 
+// NewTuple returns a tuple which represents a row in a table.
+// values are supposed to be the multiple column value of a column.
 func NewTuple(values []interface{}) *Tuple {
 	t := &Tuple{Data: make([]TupleData, len(values))}
 	for i, v := range values {
@@ -34,6 +41,7 @@ func NewTuple(values []interface{}) *Tuple {
 	return t
 }
 
+// TODO? the name "Type" might be too generic
 type Type uint32
 
 const (
@@ -42,7 +50,7 @@ const (
 	Byte64
 )
 
-// Serialize encodes given t into byte slice.
+// Serialize encodes given t into byte slice. The size is not fixed.
 func SerializeTuple(t Tuple) []byte {
 	var buf bytes.Buffer
 	for _, d := range t.Data {
