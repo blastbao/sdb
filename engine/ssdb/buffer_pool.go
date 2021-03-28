@@ -1,10 +1,15 @@
 package ssdb
 
-import "github.com/dty1er/sdb/lru"
+import (
+	"crypto/sha256"
+	"fmt"
+
+	"github.com/dty1er/sdb/lru"
+)
 
 type BufferPool struct {
-	frames *lru.Cache
-	// pageTable map[pageID]string
+	frames        *lru.Cache
+	pageDirectory PageDirectory
 	// TODO: keep b-tree index here
 }
 
