@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+type PageID uint32
+
 const PageSize = 16 * 1024 // 16KB
 
 // Page manages multiple tuples as slotted page.
@@ -39,7 +41,7 @@ type slot struct {
 }
 
 type pageHeader struct {
-	id          uint32 // [4]byte
+	id          PageID // [4]byte
 	tuplesCount uint16 // [2]byte
 	slots       []slot
 }
@@ -54,7 +56,7 @@ func NewPage(id uint32) *Page {
 func (h *pageHeader) encode() []byte {
 	length := 4 + 2 + len(h.slots)*4
 	bs := make([]byte, length)
-	putUint32OnBytes(bs[0:], h.id)
+	putUint32OnBytes(bs[0:], uint32(h.id))
 	putUint16OnBytes(bs[4:], h.tuplesCount)
 	for i := 0; i < len(h.slots); i++ {
 		putUint16OnBytes(bs[6+i*4:], h.slots[i].offset)
@@ -66,7 +68,7 @@ func (h *pageHeader) encode() []byte {
 
 func (p *Page) decodeHeader() pageHeader {
 	h := pageHeader{}
-	h.id = bytesToUint32(p.bs[0:])
+	h.id = PageID(bytesToUint32(p.bs[0:]))
 	h.tuplesCount = bytesToUint16(p.bs[4:])
 	h.slots = make([]slot, h.tuplesCount)
 
