@@ -9,7 +9,7 @@ import (
 
 type BufferPool struct {
 	frames        *lru.Cache
-	pageDirectory PageDirectory
+	pageDirectory *PageDirectory
 	// TODO: keep b-tree index here
 }
 
