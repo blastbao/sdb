@@ -13,8 +13,15 @@ type BufferPool struct {
 	// TODO: keep b-tree index here
 }
 
-// PutTuple puts tuple in the buffer pool.
-//
-func (bp *BufferPool) PutTuple(tableName string, tuple *Tuple) {
+func NewBufferPool(entryCount int) (*BufferPool, error) {
+	frames := lru.New(lru.WithCap(entryCount))
+	pageDirectory, err := LoadPageDirectory()
+	if err != nil {
+		return nil, err
+	}
 
+	return &BufferPool{
+		frames:        frames,
+		pageDirectory: pageDirectory,
+	}, nil
 }
