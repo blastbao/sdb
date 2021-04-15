@@ -27,6 +27,10 @@ type PageDirectory struct {
 	pageLocation map[PageDirectoryID]pageLocation
 }
 
+func (pd *PageDirectory) GetPageIDs(table string) []PageID {
+	return pd.pageIDs[table]
+}
+
 // GetPageContent gets page by given table name and pageID.
 func (pd *PageDirectory) GetPageContent(table string, pageID PageID) (*Page, error) {
 	pdid := EncodePageDirectoryID(table, pageID)
