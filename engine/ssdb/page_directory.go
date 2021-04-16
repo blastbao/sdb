@@ -27,6 +27,18 @@ type PageDirectory struct {
 	pageLocation map[PageDirectoryID]pageLocation
 }
 
+// LoadPageDirectory loads page directory from the file on the disk.
+func LoadPageDirectory() (*PageDirectory, error) {
+	// TODO: decide how to encode/decode page directory file
+	return nil, nil
+}
+
+// Save saves page directory on the file on the disk.
+func (pd *PageDirectory) Save() error {
+	// TODO: decide how to encode/decode page directory file
+	return nil
+}
+
 func (pd *PageDirectory) GetPageIDs(table string) []PageID {
 	return pd.pageIDs[table]
 }
