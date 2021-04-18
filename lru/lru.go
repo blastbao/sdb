@@ -61,14 +61,15 @@ func (c *Cache) Get(key string) interface{} {
 }
 
 // Set sets the value by the given key.
-func (c *Cache) Set(key string, value interface{}) {
+// It returns evicted element when eviction arises.
+func (c *Cache) Set(key string, value interface{}) interface{} {
 	c.m.Lock()
 	defer c.m.Unlock()
 	_, ok := c.items[key]
 	if ok {
 		c.items[key].value = value
 		c.list.moveToHead(c.items[key])
-		return
+		return nil
 	}
 
 	e := newElement(key, value)
@@ -77,7 +78,11 @@ func (c *Cache) Set(key string, value interface{}) {
 
 	// eviction
 	if len(c.items) > c.capacity {
+		evictionTargetValue := c.list.tail.prev.value
 		delete(c.items, c.list.tail.prev.key) // list.tail is dummy, list.tail.prev is true tail
 		c.list.remove(c.list.tail.prev)
+		return evictionTargetValue
 	}
+
+	return nil
 }
