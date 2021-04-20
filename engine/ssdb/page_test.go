@@ -12,6 +12,12 @@ func TestNewPage(t *testing.T) {
 	if !reflect.DeepEqual(page.bs, expected) {
 		t.Errorf("unexpected empty page: %v, expected: %v", page, expected)
 	}
+
+	id := page.GetID()
+
+	if id != PageID(42) {
+		t.Errorf("unexpected id: %d", id)
+	}
 }
 
 func TestPage_AppendTuple(t *testing.T) {

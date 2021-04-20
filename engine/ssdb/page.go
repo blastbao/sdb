@@ -109,3 +109,7 @@ func (p *Page) AppendTuple(t Tuple) error {
 
 	return nil
 }
+
+func (p *Page) GetID() PageID {
+	return p.decodeHeader().id
+}
