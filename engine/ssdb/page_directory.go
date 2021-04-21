@@ -2,16 +2,13 @@ package ssdb
 
 import (
 	"fmt"
-	"os"
+	"sort"
+	"strconv"
+	"strings"
 )
 
-// PageDirectoryID is the id of page directory.
-// It consists of table name and page id.
-// The ID is mapped to the filename and the location of actual data on the disk.
-type PageDirectoryID string
-
-func EncodePageDirectoryID(table string, pageID PageID) PageDirectoryID {
-	return PageDirectoryID(fmt.Sprintf("%s#%d", table, pageID))
+func EncodePageDirectoryID(table string, pageID PageID) string {
+	return fmt.Sprintf("%s#%d", table, pageID)
 }
 
 type pageLocation struct {
