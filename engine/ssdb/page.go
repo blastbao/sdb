@@ -30,7 +30,7 @@ const PageSize = 16 * 1024 // 16KB
 //
 // This layout cannot avoid a few empty bytes between the tail of header and the head of tuples.
 //
-// tuple layout: see tuple.go
+// tuple layout: see engine/ssdb/tuple.go
 type Page struct {
 	bs [PageSize]byte
 }
