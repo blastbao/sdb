@@ -1,10 +1,10 @@
 package ssdb
 
 import (
-	"os"
-	"path"
 	"reflect"
 	"testing"
+
+	"github.com/dty1er/sdb/testutil"
 )
 
 func TestEncodePageDirectoryID(t *testing.T) {
@@ -35,83 +35,160 @@ func TestPageDirectory_GetPageIDs(t *testing.T) {
 	}
 }
 
-func TestPageDirectory_GetPageContent(t *testing.T) {
-	tempdir := os.TempDir()
+func TestPageDirectory_RegisterPage(t *testing.T) {
+	tests := []struct {
+		name                string
+		pageIDs             map[string][]PageID
+		pageLocation        map[string]*pageLocation
+		maxPageCountPerFile int
+		table               string
+		page                *Page
 
-	// prepare test data
-	page1 := NewPage(1)
-	page1.AppendTuple(Tuple{
-		Data: []TupleData{
-			{Typ: Int32, Int32Val: 1},
-			{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
+		wantPageIDs      map[string][]PageID
+		wantPageLocation map[string]*pageLocation
+	}{
+		{
+			name: "no pages exist for the table",
+			pageIDs: map[string][]PageID{
+				"items": {PageID(1)},
+			},
+			pageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+			},
+			maxPageCountPerFile: 50,
+			table:               "users",
+			page:                NewPage(1),
+
+			wantPageIDs: map[string][]PageID{
+				"items": {PageID(1)},
+				"users": {PageID(1)},
+			},
+			wantPageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"users#1": {filename: "/tmp/users__1.db", offset: 0},
+			},
 		},
-	})
+		{
+			name: "the page is appended to the last file",
+			pageIDs: map[string][]PageID{
+				"items": {PageID(1), PageID(2), PageID(3)},
+			},
+			pageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
+				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+			},
+			maxPageCountPerFile: 10,
+			table:               "items",
+			page:                NewPage(4),
 
-	page2 := NewPage(2)
-	page2.AppendTuple(Tuple{
-		Data: []TupleData{
-			{Typ: Int32, Int32Val: 2},
-			{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
+			wantPageIDs: map[string][]PageID{
+				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},
+			},
+			wantPageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
+				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+				"items#4": {filename: "/tmp/items__1.db", offset: PageSize * 3},
+			},
 		},
-	})
+		{
+			name: "the page is appended to the new file because the file contains enough pages",
+			pageIDs: map[string][]PageID{
+				"items": {PageID(1), PageID(2), PageID(3)},
+			},
+			pageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
+				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+			},
+			maxPageCountPerFile: 3, // because 1 page should have 3 pages, new file will be added
+			table:               "items",
+			page:                NewPage(4),
 
-	page3 := NewPage(3)
-	page3.AppendTuple(Tuple{
-		Data: []TupleData{
-			{Typ: Int32, Int32Val: 3},
-			{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
+			wantPageIDs: map[string][]PageID{
+				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},
+			},
+			wantPageLocation: map[string]*pageLocation{
+				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
+				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+				"items#4": {filename: "/tmp/items__2.db", offset: 0},
+			},
 		},
-	})
-
-	usersF, err := os.OpenFile(path.Join(tempdir, "users_1.db"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
 	}
-	users2F, err := os.OpenFile(path.Join(tempdir, "users_2.db"), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0666)
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
+
+	for _, test := range tests {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			pd := &PageDirectory{
+				pageIDs:             test.pageIDs,
+				pageLocation:        test.pageLocation,
+				maxPageCountPerFile: test.maxPageCountPerFile,
+			}
+
+			pd.RegisterPage(test.table, test.page)
+			testutil.MustEqual(t, pd.pageIDs, test.wantPageIDs)
+			testutil.MustEqual(t, pd.pageLocation, test.wantPageLocation)
+		})
 	}
+}
 
-	usersF.Write(page1.bs[:])
-	usersF.Write(page2.bs[:])
-	users2F.Write(page3.bs[:])
-
-	defer os.Remove(path.Join(tempdir, "users_1.db"))
-	defer os.Remove(path.Join(tempdir, "users_2.db"))
+func TestPageDirectory_GetPageLocation(t *testing.T) {
+	locations := []*pageLocation{
+		{filename: "/tmp/users__1.db", offset: 0},
+		{filename: "/tmp/users__1.db", offset: PageSize},
+		{filename: "/tmp/users__2.db", offset: 0},
+	}
 
 	// build page directory by prepared data
 	pd := &PageDirectory{
-		pageLocation: map[PageDirectoryID]pageLocation{
-			PageDirectoryID("users#1"): {filename: path.Join(tempdir, "users_1.db"), offset: 0},
-			PageDirectoryID("users#2"): {filename: path.Join(tempdir, "users_1.db"), offset: PageSize},
-			PageDirectoryID("users#3"): {filename: path.Join(tempdir, "users_2.db"), offset: 0},
+		pageLocation: map[string]*pageLocation{
+			"users#1": locations[0],
+			"users#2": locations[1],
+			"users#3": locations[2],
 		},
 	}
 
-	p1, err := pd.GetPageContent("users", PageID(1))
+	p1, err := pd.GetPageLocation("users", PageID(1))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	if !reflect.DeepEqual(p1, page1) {
+	if !reflect.DeepEqual(p1, locations[0]) {
 		t.Errorf("unexpected page: %v", p1)
 	}
 
-	p2, err := pd.GetPageContent("users", PageID(2))
+	p2, err := pd.GetPageLocation("users", PageID(2))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	if !reflect.DeepEqual(p2, page2) {
-		t.Errorf("unexpected page: %v", p1)
+	if !reflect.DeepEqual(p2, locations[1]) {
+		t.Errorf("unexpected page: %v", p2)
 	}
 
-	p3, err := pd.GetPageContent("users", PageID(3))
+	p3, err := pd.GetPageLocation("users", PageID(3))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	if !reflect.DeepEqual(p3, page3) {
+	if !reflect.DeepEqual(p3, locations[2]) {
 		t.Errorf("unexpected page: %v", p1)
+	}
+}
+
+func Test_toFilename_fileInfoFromFilename(t *testing.T) {
+	filename := toFilename("user_accounts", 3)
+	if filename != "user_accounts__3.db" {
+		t.Errorf("unexpected filename: %s", filename)
+	}
+
+	table, offset := fileInfofromFilename(filename)
+	if table != "user_accounts" {
+		t.Errorf("unexpected table: %s", table)
+	}
+	if offset != 3 {
+		t.Errorf("unexpected offset: %d", offset)
 	}
 }
