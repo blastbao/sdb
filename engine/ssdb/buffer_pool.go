@@ -7,21 +7,16 @@ import (
 	"github.com/dty1er/sdb/lru"
 )
 
+// BufferPool manages pages, indices, and files on the disk.
 type BufferPool struct {
-	frames        *lru.Cache
-	pageDirectory *PageDirectory
+	// lru cache element type is *PageDescriptor. BufferPool never manages Page directly.
+	frames *lru.Cache
 	// TODO: keep b-tree index here
 }
 
 func NewBufferPool(entryCount int) (*BufferPool, error) {
 	frames := lru.New(lru.WithCap(entryCount))
-	pageDirectory, err := LoadPageDirectory()
-	if err != nil {
-		return nil, err
-	}
-
 	return &BufferPool{
-		frames:        frames,
-		pageDirectory: pageDirectory,
+		frames: frames,
 	}, nil
 }
