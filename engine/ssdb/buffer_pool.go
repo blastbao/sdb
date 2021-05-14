@@ -7,6 +7,14 @@ import (
 	"github.com/dty1er/sdb/lru"
 )
 
+// pageDescriptor is a management unit of page from buffer pool point of view.
+type pageDescriptor struct {
+	page *Page
+
+	// when dirty flag is true, the page on the buffer pool
+	dirty bool
+}
+
 // BufferPool manages pages, indices, and files on the disk.
 type BufferPool struct {
 	// lru cache element type is *PageDescriptor. BufferPool never manages Page directly.
