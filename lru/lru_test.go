@@ -66,7 +66,10 @@ func Test_Cache(t *testing.T) {
 	}
 
 	// get "2", then it will be marked as it is recently used
-	_ = c2.Get("2")
+	got := c2.Get("2")
+	if got.(int) != 2 {
+		t.Errorf("unexpected gotten value: %v", got)
+	}
 	// then set "7", because "2" is recently used, "3" will be evicted
 	evicted = c2.Set("7", 7)
 	if evicted.(int) != 3 {

@@ -56,7 +56,7 @@ func (c *Cache) Get(key string) interface{} {
 	}
 
 	c.list.moveToHead(c.items[key])
-	return c.items[key]
+	return c.items[key].value
 
 }
 
