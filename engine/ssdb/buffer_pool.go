@@ -22,9 +22,57 @@ type BufferPool struct {
 	// TODO: keep b-tree index here
 }
 
-func NewBufferPool(entryCount int) (*BufferPool, error) {
+func NewBufferPool(entryCount int) *BufferPool {
 	frames := lru.New(lru.WithCap(entryCount))
-	return &BufferPool{
-		frames: frames,
-	}, nil
+	return &BufferPool{frames: frames}
+}
+
+// cacheKey encodes the cache key from the given arguments.
+func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s___%d", tableName, pageID)))
+	return string(hash[:])
+}
+
+// InsertPage inserts page in the cache.
+// When non-nil page is returned, it must be persisted on the disk.
+func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
+	key := bp.cacheKey(tableName, page.GetID())
+	// when inserting a new page, it is not persisted so dirty must be true
+	pd := &pageDescriptor{page: page, dirty: true}
+
+	evicted := bp.frames.Set(key, pd)
+	if evicted == nil {
+		return nil
+	}
+
+	evictedPageDescriptor := evicted.(*pageDescriptor)
+	if !evictedPageDescriptor.dirty {
+		return nil
+	}
+
+	return evictedPageDescriptor.page
+
+}
+
+// AppendTuple finds the page from page directory then puts tuple in it.
+// If the page is not found, false will be responded.
+func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple Tuple) bool {
+	key := bp.cacheKey(tableName, pageID)
+
+	// First, try to fetch the page for the table from cache
+	elem := bp.frames.Get(key)
+	if elem == nil {
+		return false // when page is not found in the cache, return false
+	}
+
+	pageDescriptor := elem.(*pageDescriptor)
+	// When cache is found, try to append the tuple to it
+	// When the page doesn't have enough space, it returns false
+	if err := pageDescriptor.page.AppendTuple(tuple); err != nil {
+		// no available space. new page should be created in advance
+		return false
+	}
+
+	pageDescriptor.dirty = true // when new tuple is appended to the page, it is marked dirty
+	return true
 }
