@@ -7,6 +7,7 @@ import (
 )
 
 func MustEqual(t *testing.T, a, b interface{}) {
+	t.Helper()
 	if diff := deep.Equal(a, b); diff != nil {
 		t.Fatal(diff)
 	}
