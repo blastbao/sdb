@@ -17,23 +17,23 @@ func TestBufferPool_InsertPage(t *testing.T) {
 	nilPage := (*Page)(nil)
 	evicted := bp.InsertPage(table, page1)
 	testutil.MustEqual(t, evicted, nilPage)
-	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 1)).(*pageDescriptor), &pageDescriptor{page: page1, dirty: true})
+	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 1)).(*pageDescriptor), &pageDescriptor{table: table, page: page1, dirty: true})
 
 	evicted = bp.InsertPage(table, page2)
 	testutil.MustEqual(t, evicted, nilPage)
-	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 2)).(*pageDescriptor), &pageDescriptor{page: page2, dirty: true})
+	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 2)).(*pageDescriptor), &pageDescriptor{table: table, page: page2, dirty: true})
 
 	// because lru capacity is 2, 1st page is evicted when the 3rd page is inserted
 	evicted = bp.InsertPage(table, page3)
 	testutil.MustEqual(t, evicted, page1)
-	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 3)).(*pageDescriptor), &pageDescriptor{page: page3, dirty: true})
+	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 3)).(*pageDescriptor), &pageDescriptor{table: table, page: page3, dirty: true})
 	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 1)), nil) // make sure 1st page is evicted
 
 	bp = NewBufferPool(2)
 
 	// set 2 page descriptors whose dirty are false
-	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{page: page1, dirty: false})
-	bp.frames.Set(bp.cacheKey(table, 2), &pageDescriptor{page: page2, dirty: false})
+	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})
+	bp.frames.Set(bp.cacheKey(table, 2), &pageDescriptor{table: table, page: page2, dirty: false})
 
 	// page1 is purged but because it's not dirty, it won't be returned.
 	evicted = bp.InsertPage(table, page3)
@@ -52,7 +52,7 @@ func TestBufferPool_AppendTuple(t *testing.T) {
 	dummyTuple := Tuple{Data: []TupleData{{Typ: Int32, Int32Val: 96}}}
 
 	page1 := NewPage(1)
-	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{page: page1, dirty: false})
+	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})
 	appended = bp.AppendTuple(table, 1, Tuple{})
 	testutil.MustEqual(t, appended, true)
 	page1Descriptor := bp.frames.Get(bp.cacheKey(table, 1)).(*pageDescriptor)

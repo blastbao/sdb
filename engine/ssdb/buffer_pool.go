@@ -9,7 +9,8 @@ import (
 
 // pageDescriptor is a management unit of page from buffer pool point of view.
 type pageDescriptor struct {
-	page *Page
+	table string
+	page  *Page
 
 	// when dirty flag is true, the page on the buffer pool
 	dirty bool
@@ -38,7 +39,7 @@ func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
 func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
 	key := bp.cacheKey(tableName, page.GetID())
 	// when inserting a new page, it is not persisted so dirty must be true
-	pd := &pageDescriptor{page: page, dirty: true}
+	pd := &pageDescriptor{table: tableName, page: page, dirty: true}
 
 	evicted := bp.frames.Set(key, pd)
 	if evicted == nil {
