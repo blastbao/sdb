@@ -17,7 +17,7 @@ func assertValidTreeNode(t *testing.T, node *Node, expectedEntries int, expected
 	testutil.MustEqual(t, len(node.Entries), expectedEntries)
 	testutil.MustEqual(t, len(node.Children), expectedChildren)
 	for i, key := range keys {
-		testutil.MustEqual(t, node.Entries[i].key, key)
+		testutil.MustEqual(t, node.Entries[i].Key, key)
 	}
 }
 

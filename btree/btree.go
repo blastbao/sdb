@@ -4,12 +4,15 @@
 package btree
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"sync"
 )
 
 type Entry struct {
-	key   interface{}
-	value interface{}
+	Key   interface{}
+	Value interface{}
 }
 
 type Node struct {
@@ -90,7 +93,7 @@ func NewStringKeyTree() *BTree {
 
 // Put puts the given value by the given key to the BTree.
 func (bt *BTree) Put(key, value interface{}) {
-	e := &Entry{key: key, value: value}
+	e := &Entry{Key: key, Value: value}
 
 	if bt.Root == nil {
 		bt.Root = &Node{Entries: []*Entry{e}, Children: []*Node{}}
@@ -107,7 +110,7 @@ func (bt *BTree) Put(key, value interface{}) {
 func (bt *BTree) Get(key interface{}) (interface{}, bool) {
 	node, index, found := bt.searchRecursively(bt.Root, key)
 	if found {
-		return node.Entries[index].value, true
+		return node.Entries[index].Value, true
 	}
 
 	return nil, false
@@ -136,9 +139,9 @@ func (bt *BTree) search(node *Node, key interface{}) (int, bool) {
 		mid = (high + low) / 2
 		result := 0
 		if bt.KeyType == Int {
-			result = CompareInt(key, node.Entries[mid].key)
+			result = CompareInt(key, node.Entries[mid].Key)
 		} else {
-			result = CompareString(key, node.Entries[mid].key)
+			result = CompareString(key, node.Entries[mid].Key)
 		}
 		switch {
 		case result > 0:
@@ -202,7 +205,7 @@ func (bt *BTree) insert(node *Node, entry *Entry) bool {
 
 // insertIntoLeaf inserts the entry to the node. It assumes that the node is leaf.
 func (bt *BTree) insertIntoLeaf(node *Node, entry *Entry) bool {
-	insertPos, found := bt.search(node, entry.key)
+	insertPos, found := bt.search(node, entry.Key)
 	// when the key is already in the tree, update it
 	if found {
 		node.Entries[insertPos] = entry
@@ -219,7 +222,7 @@ func (bt *BTree) insertIntoLeaf(node *Node, entry *Entry) bool {
 
 // insertIntoInternal inserts the entry to the node.
 func (bt *BTree) insertIntoInternal(node *Node, entry *Entry) bool {
-	insertPos, found := bt.search(node, entry.key)
+	insertPos, found := bt.search(node, entry.Key)
 	// when the key is already in the tree, update it
 	if found {
 		node.Entries[insertPos] = entry
@@ -284,7 +287,7 @@ func (bt *BTree) splitNonRoot(node *Node) {
 		setParent(right.Children, right)
 	}
 
-	insertPos, _ := bt.search(parent, node.Entries[middle].key)
+	insertPos, _ := bt.search(parent, node.Entries[middle].Key)
 
 	// insert middle entry into parent
 	parent.Entries = append(parent.Entries, nil)
@@ -313,4 +316,24 @@ func setParent(nodes []*Node, parent *Node) {
 	for _, node := range nodes {
 		node.Parent = parent
 	}
+}
+
+func (bt *BTree) Serialize() ([]byte, error) {
+	buff := new(bytes.Buffer)
+	if err := json.NewEncoder(buff).Encode(&bt); err != nil {
+		return nil, fmt.Errorf("serialize btree: %w", err)
+	}
+
+	return buff.Bytes(), nil
+}
+
+func Deserialize(bs []byte) (*BTree, error) {
+	var bt BTree
+	buff := bytes.NewBuffer(bs)
+	if err := json.NewDecoder(buff).Decode(&bt); err != nil {
+		return nil, fmt.Errorf("deserialize btree: %w", err)
+	}
+
+	bt.latch = sync.RWMutex{}
+	return &bt, nil
 }
