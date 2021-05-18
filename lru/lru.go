@@ -11,7 +11,7 @@ type Cache struct {
 
 	// items is a hash map to the elements.
 	items map[string]*element
-	m     *sync.RWMutex
+	latch *sync.RWMutex
 }
 
 type Config struct {
@@ -31,7 +31,7 @@ func New(opts ...Option) *Cache {
 		capacity: conf.capacity,
 		items:    make(map[string]*element),
 		list:     newDoublyLinkedList(),
-		m:        &sync.RWMutex{},
+		latch:    &sync.RWMutex{},
 	}
 
 	if c.capacity == 0 {
@@ -48,8 +48,8 @@ func WithCap(capacity int) Option {
 // Get returns value by given key.
 // nil is returned when the key is not found in the cache.
 func (c *Cache) Get(key string) interface{} {
-	c.m.RLock()
-	defer c.m.RUnlock()
+	c.latch.RLock()
+	defer c.latch.RUnlock()
 	_, ok := c.items[key]
 	if !ok {
 		return nil
@@ -60,11 +60,25 @@ func (c *Cache) Get(key string) interface{} {
 
 }
 
+// GetAll returns all the values.
+func (c *Cache) GetAll() []interface{} {
+	c.latch.RLock()
+	defer c.latch.RUnlock()
+
+	ret := make([]interface{}, 0, len(c.items))
+	for _, elem := range c.items {
+		ret = append(ret, elem.value)
+	}
+
+	return ret
+
+}
+
 // Set sets the value by the given key.
 // It returns evicted element when eviction arises.
 func (c *Cache) Set(key string, value interface{}) interface{} {
-	c.m.Lock()
-	defer c.m.Unlock()
+	c.latch.Lock()
+	defer c.latch.Unlock()
 	_, ok := c.items[key]
 	if ok {
 		c.items[key].value = value

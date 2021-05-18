@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/dty1er/sdb/testutil"
 )
 
 func Test_Cache(t *testing.T) {
@@ -78,4 +80,17 @@ func Test_Cache(t *testing.T) {
 	if !reflect.DeepEqual(keysSorted(c2.items), []string{"2", "4", "5", "6", "7"}) { // "3" is evicted
 		t.Errorf("invalid cache: %v", c2.items)
 	}
+
+	gotAllItems := []int{}
+	items := c2.GetAll()
+	for _, item := range items {
+		intItem, ok := item.(int)
+		if !ok {
+			t.Errorf("invalid returned item: %v", item)
+		}
+		gotAllItems = append(gotAllItems, intItem)
+	}
+
+	sort.Ints(gotAllItems)
+	testutil.MustEqual(t, gotAllItems, []int{2, 4, 5, 6, 7})
 }
