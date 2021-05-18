@@ -27,16 +27,15 @@ const (
 )
 
 type BTree struct {
-	root    *Node // root node
-	size    int   // count of keys in the tree
-	m       int   // maximum number of children
-	compare func(a, b interface{}) int
+	Root    *Node // root node
+	Size    int   // count of keys in the tree
+	M       int   // maximum number of children
+	KeyType KeyType
 	latch   sync.RWMutex
 }
 
-// NewIntKeyTree returns BTree whose key is integer type.
-func NewIntKeyTree() *BTree {
-	return &BTree{m: 3, compare: func(a, b interface{}) int {
+var (
+	CompareInt = func(a, b interface{}) int {
 		ai := a.(int)
 		bi := b.(int)
 		if ai > bi {
@@ -46,12 +45,9 @@ func NewIntKeyTree() *BTree {
 		} else {
 			return -1
 		}
-	}}
-}
+	}
 
-// NewStringKeyTree returns BTree whose key is string type.
-func NewStringKeyTree() *BTree {
-	return &BTree{m: 3, compare: func(a, b interface{}) int {
+	CompareString = func(a, b interface{}) int {
 		as := a.(string)
 		bs := b.(string)
 		if as > bs {
@@ -61,7 +57,29 @@ func NewStringKeyTree() *BTree {
 		} else {
 			return -1
 		}
-	}}
+	}
+)
+
+// NewIntKeyTree returns BTree whose key is integer type.
+func NewIntKeyTree() *BTree {
+	return &BTree{
+		Root:    nil,
+		Size:    0,
+		M:       3,
+		KeyType: Int,
+		latch:   sync.RWMutex{},
+	}
+}
+
+// NewStringKeyTree returns BTree whose key is string type.
+func NewStringKeyTree() *BTree {
+	return &BTree{
+		Root:    nil,
+		Size:    0,
+		M:       3,
+		KeyType: String,
+		latch:   sync.RWMutex{},
+	}
 }
 
 /*
@@ -74,20 +92,20 @@ func NewStringKeyTree() *BTree {
 func (bt *BTree) Put(key, value interface{}) {
 	e := &Entry{key: key, value: value}
 
-	if bt.root == nil {
-		bt.root = &Node{Entries: []*Entry{e}, Children: []*Node{}}
-		bt.size++
+	if bt.Root == nil {
+		bt.Root = &Node{Entries: []*Entry{e}, Children: []*Node{}}
+		bt.Size++
 		return
 	}
 
-	if bt.insert(bt.root, e) {
-		bt.size++
+	if bt.insert(bt.Root, e) {
+		bt.Size++
 	}
 }
 
 // Get retrieves a value by the given key.
 func (bt *BTree) Get(key interface{}) (interface{}, bool) {
-	node, index, found := bt.searchRecursively(bt.root, key)
+	node, index, found := bt.searchRecursively(bt.Root, key)
 	if found {
 		return node.Entries[index].value, true
 	}
@@ -101,7 +119,7 @@ func (bt *BTree) remove(key interface{}) {
 }
 
 func (bt *BTree) Empty() bool {
-	return bt.size == 0
+	return bt.Size == 0
 }
 
 /*
@@ -116,7 +134,12 @@ func (bt *BTree) search(node *Node, key interface{}) (int, bool) {
 	var mid int
 	for low <= high {
 		mid = (high + low) / 2
-		result := bt.compare(key, node.Entries[mid].key)
+		result := 0
+		if bt.KeyType == Int {
+			result = CompareInt(key, node.Entries[mid].key)
+		} else {
+			result = CompareString(key, node.Entries[mid].key)
+		}
 		switch {
 		case result > 0:
 			low = mid + 1
@@ -157,11 +180,11 @@ func (bt *BTree) shouldSplit(node *Node) bool {
 }
 
 func (bt *BTree) maxEntries() int {
-	return bt.m - 1
+	return bt.M - 1
 }
 
 func (bt *BTree) middle() int {
-	return (bt.m - 1) / 2
+	return (bt.M - 1) / 2
 }
 
 /*
@@ -212,7 +235,7 @@ func (bt *BTree) split(node *Node) {
 		return
 	}
 
-	if node == bt.root {
+	if node == bt.Root {
 		bt.splitRoot()
 		return
 	}
@@ -225,24 +248,24 @@ func (bt *BTree) splitRoot() {
 	middle := bt.middle()
 
 	// split root into left and right
-	left := &Node{Entries: append([]*Entry(nil), bt.root.Entries[:middle]...)}
-	right := &Node{Entries: append([]*Entry(nil), bt.root.Entries[middle+1:]...)}
+	left := &Node{Entries: append([]*Entry(nil), bt.Root.Entries[:middle]...)}
+	right := &Node{Entries: append([]*Entry(nil), bt.Root.Entries[middle+1:]...)}
 
-	if !bt.isLeaf(bt.root) {
+	if !bt.isLeaf(bt.Root) {
 		// split root children into left.Children and right.Children
-		left.Children = append([]*Node(nil), bt.root.Children[:middle+1]...)
-		right.Children = append([]*Node(nil), bt.root.Children[middle+1:]...)
+		left.Children = append([]*Node(nil), bt.Root.Children[:middle+1]...)
+		right.Children = append([]*Node(nil), bt.Root.Children[middle+1:]...)
 		setParent(left.Children, left)
 		setParent(right.Children, right)
 	}
 
 	newRoot := &Node{
-		Entries:  []*Entry{bt.root.Entries[middle]},
+		Entries:  []*Entry{bt.Root.Entries[middle]},
 		Children: []*Node{left, right},
 	}
 	left.Parent = newRoot
 	right.Parent = newRoot
-	bt.root = newRoot
+	bt.Root = newRoot
 }
 
 func (bt *BTree) splitNonRoot(node *Node) {
