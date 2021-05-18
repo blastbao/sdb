@@ -28,9 +28,9 @@ type pageLocation struct {
 // PageDirectory manages page location by table name and page id.
 // This information is persisted on the disk.
 type PageDirectory struct {
-	pageIDs             map[string][]PageID // table name and PageID
-	pageLocation        map[string]*pageLocation
-	maxPageCountPerFile int
+	PageIDs             map[string][]PageID // table name and PageID
+	PageLocation        map[string]*pageLocation
+	MaxPageCountPerFile int
 }
 
 // LoadPageDirectory loads page directory from the file on the disk.
@@ -51,9 +51,9 @@ func LoadPageDirectory(directory string) (*PageDirectory, error) {
 	if info.Size() == 0 {
 		// no page exists (e.g. run database for the first time)
 		return &PageDirectory{
-			pageIDs:             map[string][]PageID{},
-			pageLocation:        map[string]*pageLocation{},
-			maxPageCountPerFile: MaxPageCountPerFile,
+			PageIDs:             map[string][]PageID{},
+			PageLocation:        map[string]*pageLocation{},
+			MaxPageCountPerFile: MaxPageCountPerFile,
 		}, nil
 	}
 
@@ -86,24 +86,24 @@ func (pd *PageDirectory) Save(directory string) error {
 }
 
 func (pd *PageDirectory) GetPageIDs(table string) []PageID {
-	return pd.pageIDs[table]
+	return pd.PageIDs[table]
 }
 
 func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 	pdid := EncodePageDirectoryID(table, page.GetID())
-	ids := pd.pageIDs[table]
+	ids := pd.PageIDs[table]
 	if len(ids) == 0 {
-		pd.pageIDs[table] = []PageID{page.GetID()}
-		pd.pageLocation[pdid] = &pageLocation{Filename: toFilename(table, 1), Offset: 0}
+		pd.PageIDs[table] = []PageID{page.GetID()}
+		pd.PageLocation[pdid] = &pageLocation{Filename: toFilename(table, 1), Offset: 0}
 		return
 	}
 
-	pd.pageIDs[table] = append(ids, page.GetID())
+	pd.PageIDs[table] = append(ids, page.GetID())
 
 	filenames := []string{}
 	pageCounts := map[string]int{}
 	for _, pageID := range ids {
-		loc := pd.pageLocation[EncodePageDirectoryID(table, pageID)]
+		loc := pd.PageLocation[EncodePageDirectoryID(table, pageID)]
 		filenames = append(filenames, loc.Filename)
 		if _, ok := pageCounts[loc.Filename]; ok {
 			pageCounts[loc.Filename]++
@@ -118,22 +118,22 @@ func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 
 	// when the latest file has enough space to store a page,
 	// use the file
-	if pageCount < pd.maxPageCountPerFile {
+	if pageCount < pd.MaxPageCountPerFile {
 		newPageLoc := &pageLocation{Filename: latestFilename, Offset: uint32(pageCount * PageSize)}
-		pd.pageLocation[pdid] = newPageLoc
+		pd.PageLocation[pdid] = newPageLoc
 		return
 	}
 
 	// define new file
 	_, offset := fileInfofromFilename(latestFilename)
 	newPageLoc := &pageLocation{Filename: toFilename(table, offset+1), Offset: 0}
-	pd.pageLocation[pdid] = newPageLoc
+	pd.PageLocation[pdid] = newPageLoc
 }
 
 // GetPageLocation gets page by given table name and pageID.
 func (pd *PageDirectory) GetPageLocation(table string, pageID PageID) (*pageLocation, error) {
 	pdid := EncodePageDirectoryID(table, pageID)
-	loc, ok := pd.pageLocation[pdid]
+	loc, ok := pd.PageLocation[pdid]
 	if !ok {
 		return nil, fmt.Errorf("page not found for table %v, id %v", table, pageID)
 	}

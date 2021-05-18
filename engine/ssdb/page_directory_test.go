@@ -2,6 +2,7 @@ package ssdb
 
 import (
 	"os"
+	"path"
 	"reflect"
 	"testing"
 
@@ -19,24 +20,30 @@ func TestEncodePageDirectoryID(t *testing.T) {
 func Test_Save_Load_PageDirectory(t *testing.T) {
 	tempDir := os.TempDir()
 
+	// Remove the file in advance, just in case
+	os.Remove(path.Join(tempDir, "__page_directory.db"))
+
+	defer os.Remove(path.Join(tempDir, "__page_directory.db"))
+
 	// when no file exists, empty page directory will be responded
 	loaded, err := LoadPageDirectory(tempDir)
 	testutil.MustBeNil(t, err)
 	testutil.MustEqual(t, loaded, &PageDirectory{
-		pageIDs:             map[string][]PageID{},
-		pageLocation:        map[string]*pageLocation{},
-		maxPageCountPerFile: 1000,
+		PageIDs:             map[string][]PageID{},
+		PageLocation:        map[string]*pageLocation{},
+		MaxPageCountPerFile: 1000,
 	})
 
 	pd := &PageDirectory{
-		pageIDs: map[string][]PageID{
+		PageIDs: map[string][]PageID{
 			"users": {PageID(1), PageID(3), PageID(5)},
 		},
-		pageLocation: map[string]*pageLocation{
+		PageLocation: map[string]*pageLocation{
 			"users#1": {Filename: "/tmp/users__1.db"},
 			"users#3": {Filename: "/tmp/users__1.db"},
 			"users#5": {Filename: "/tmp/users__1.db"},
 		},
+		MaxPageCountPerFile: 1000,
 	}
 
 	err = pd.Save(tempDir)
@@ -49,7 +56,7 @@ func Test_Save_Load_PageDirectory(t *testing.T) {
 
 func TestPageDirectory_GetPageIDs(t *testing.T) {
 	pd := &PageDirectory{
-		pageIDs: map[string][]PageID{"users": {PageID(1), PageID(3), PageID(5)}},
+		PageIDs: map[string][]PageID{"users": {PageID(1), PageID(3), PageID(5)}},
 	}
 
 	ids := pd.GetPageIDs("items")
@@ -154,14 +161,14 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
 			pd := &PageDirectory{
-				pageIDs:             test.pageIDs,
-				pageLocation:        test.pageLocation,
-				maxPageCountPerFile: test.maxPageCountPerFile,
+				PageIDs:             test.pageIDs,
+				PageLocation:        test.pageLocation,
+				MaxPageCountPerFile: test.maxPageCountPerFile,
 			}
 
 			pd.RegisterPage(test.table, test.page)
-			testutil.MustEqual(t, pd.pageIDs, test.wantPageIDs)
-			testutil.MustEqual(t, pd.pageLocation, test.wantPageLocation)
+			testutil.MustEqual(t, pd.PageIDs, test.wantPageIDs)
+			testutil.MustEqual(t, pd.PageLocation, test.wantPageLocation)
 		})
 	}
 }
@@ -175,7 +182,7 @@ func TestPageDirectory_GetPageLocation(t *testing.T) {
 
 	// build page directory by prepared data
 	pd := &PageDirectory{
-		pageLocation: map[string]*pageLocation{
+		PageLocation: map[string]*pageLocation{
 			"users#1": locations[0],
 			"users#2": locations[1],
 			"users#3": locations[2],
