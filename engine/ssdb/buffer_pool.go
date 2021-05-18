@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 
+	"github.com/dty1er/sdb/btree"
 	"github.com/dty1er/sdb/lru"
 )
 
@@ -19,11 +20,11 @@ type pageDescriptor struct {
 // BufferPool manages pages, indices, and files on the disk.
 type BufferPool struct {
 	// lru cache element type is *PageDescriptor. BufferPool never manages Page directly.
-	frames *lru.Cache
-	// TODO: keep b-tree index here
+	frames  *lru.Cache
+	indices map[string]*btree.BTree
 }
 
-func NewBufferPool(entryCount int) *BufferPool {
+func NewBufferPool(entryCount int, index map[string]*btree.BTree) *BufferPool {
 	frames := lru.New(lru.WithCap(entryCount))
 	return &BufferPool{frames: frames}
 }

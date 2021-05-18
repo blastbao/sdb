@@ -8,7 +8,7 @@ import (
 
 func TestBufferPool_InsertPage(t *testing.T) {
 	table := "users"
-	bp := NewBufferPool(2)
+	bp := NewBufferPool(2, nil)
 
 	page1 := NewPage(1)
 	page2 := NewPage(2)
@@ -29,7 +29,7 @@ func TestBufferPool_InsertPage(t *testing.T) {
 	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 3)).(*pageDescriptor), &pageDescriptor{table: table, page: page3, dirty: true})
 	testutil.MustEqual(t, bp.frames.Get(bp.cacheKey(table, 1)), nil) // make sure 1st page is evicted
 
-	bp = NewBufferPool(2)
+	bp = NewBufferPool(2, nil)
 
 	// set 2 page descriptors whose dirty are false
 	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})
@@ -42,7 +42,7 @@ func TestBufferPool_InsertPage(t *testing.T) {
 
 func TestBufferPool_AppendTuple(t *testing.T) {
 	table := "users"
-	bp := NewBufferPool(2)
+	bp := NewBufferPool(2, nil)
 
 	// make sure false is responded when no page on cache
 	appended := bp.AppendTuple(table, 1, Tuple{})
