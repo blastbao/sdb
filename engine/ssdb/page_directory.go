@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+const (
+	MaxPageCountPerFile = 1000
+)
+
 func EncodePageDirectoryID(table string, pageID PageID) string {
 	return fmt.Sprintf("%s#%d", table, pageID)
 }
