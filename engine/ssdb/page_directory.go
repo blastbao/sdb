@@ -12,8 +12,8 @@ func EncodePageDirectoryID(table string, pageID PageID) string {
 }
 
 type pageLocation struct {
-	filename string
-	offset   uint32
+	Filename string
+	Offset   uint32
 	// length is always PageSize
 }
 
@@ -46,7 +46,7 @@ func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 	ids := pd.pageIDs[table]
 	if len(ids) == 0 {
 		pd.pageIDs[table] = []PageID{page.GetID()}
-		pd.pageLocation[pdid] = &pageLocation{filename: toFilename(table, 1), offset: 0}
+		pd.pageLocation[pdid] = &pageLocation{Filename: toFilename(table, 1), Offset: 0}
 		return
 	}
 
@@ -56,11 +56,11 @@ func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 	pageCounts := map[string]int{}
 	for _, pageID := range ids {
 		loc := pd.pageLocation[EncodePageDirectoryID(table, pageID)]
-		filenames = append(filenames, loc.filename)
-		if _, ok := pageCounts[loc.filename]; ok {
-			pageCounts[loc.filename]++
+		filenames = append(filenames, loc.Filename)
+		if _, ok := pageCounts[loc.Filename]; ok {
+			pageCounts[loc.Filename]++
 		} else {
-			pageCounts[loc.filename] = 1
+			pageCounts[loc.Filename] = 1
 		}
 	}
 
@@ -71,14 +71,14 @@ func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 	// when the latest file has enough space to store a page,
 	// use the file
 	if pageCount < pd.maxPageCountPerFile {
-		newPageLoc := &pageLocation{filename: latestFilename, offset: uint32(pageCount * PageSize)}
+		newPageLoc := &pageLocation{Filename: latestFilename, Offset: uint32(pageCount * PageSize)}
 		pd.pageLocation[pdid] = newPageLoc
 		return
 	}
 
 	// define new file
 	_, offset := fileInfofromFilename(latestFilename)
-	newPageLoc := &pageLocation{filename: toFilename(table, offset+1), offset: 0}
+	newPageLoc := &pageLocation{Filename: toFilename(table, offset+1), Offset: 0}
 	pd.pageLocation[pdid] = newPageLoc
 }
 

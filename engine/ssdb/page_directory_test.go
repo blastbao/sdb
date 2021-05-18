@@ -53,7 +53,7 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"items": {PageID(1)},
 			},
 			pageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
+				"items#1": {Filename: "items__1.db", Offset: 0},
 			},
 			maxPageCountPerFile: 50,
 			table:               "users",
@@ -64,8 +64,8 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"users": {PageID(1)},
 			},
 			wantPageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
-				"users#1": {filename: "/tmp/users__1.db", offset: 0},
+				"items#1": {Filename: "items__1.db", Offset: 0},
+				"users#1": {Filename: "users__1.db", Offset: 0},
 			},
 		},
 		{
@@ -74,9 +74,9 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"items": {PageID(1), PageID(2), PageID(3)},
 			},
 			pageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
-				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
-				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+				"items#1": {Filename: "items__1.db", Offset: 0},
+				"items#2": {Filename: "items__1.db", Offset: PageSize},
+				"items#3": {Filename: "items__1.db", Offset: PageSize * 2},
 			},
 			maxPageCountPerFile: 10,
 			table:               "items",
@@ -86,10 +86,10 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},
 			},
 			wantPageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
-				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
-				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
-				"items#4": {filename: "/tmp/items__1.db", offset: PageSize * 3},
+				"items#1": {Filename: "items__1.db", Offset: 0},
+				"items#2": {Filename: "items__1.db", Offset: PageSize},
+				"items#3": {Filename: "items__1.db", Offset: PageSize * 2},
+				"items#4": {Filename: "items__1.db", Offset: PageSize * 3},
 			},
 		},
 		{
@@ -98,9 +98,9 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"items": {PageID(1), PageID(2), PageID(3)},
 			},
 			pageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
-				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
-				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
+				"items#1": {Filename: "items__1.db", Offset: 0},
+				"items#2": {Filename: "items__1.db", Offset: PageSize},
+				"items#3": {Filename: "items__1.db", Offset: PageSize * 2},
 			},
 			maxPageCountPerFile: 3, // because 1 page should have 3 pages, new file will be added
 			table:               "items",
@@ -110,10 +110,10 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},
 			},
 			wantPageLocation: map[string]*pageLocation{
-				"items#1": {filename: "/tmp/items__1.db", offset: 0},
-				"items#2": {filename: "/tmp/items__1.db", offset: PageSize},
-				"items#3": {filename: "/tmp/items__1.db", offset: PageSize * 2},
-				"items#4": {filename: "/tmp/items__2.db", offset: 0},
+				"items#1": {Filename: "items__1.db", Offset: 0},
+				"items#2": {Filename: "items__1.db", Offset: PageSize},
+				"items#3": {Filename: "items__1.db", Offset: PageSize * 2},
+				"items#4": {Filename: "items__2.db", Offset: 0},
 			},
 		},
 	}
@@ -136,9 +136,9 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 
 func TestPageDirectory_GetPageLocation(t *testing.T) {
 	locations := []*pageLocation{
-		{filename: "/tmp/users__1.db", offset: 0},
-		{filename: "/tmp/users__1.db", offset: PageSize},
-		{filename: "/tmp/users__2.db", offset: 0},
+		{Filename: "/tmp/users__1.db", Offset: 0},
+		{Filename: "/tmp/users__1.db", Offset: PageSize},
+		{Filename: "/tmp/users__2.db", Offset: 0},
 	}
 
 	// build page directory by prepared data

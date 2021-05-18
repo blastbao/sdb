@@ -29,7 +29,7 @@ func TestDiskManager_GetPage(t *testing.T) {
 
 	file.WriteAt(page.bs[:], int64(offset))
 
-	loc := &pageLocation{filename: filename, offset: uint32(offset)}
+	loc := &pageLocation{Filename: filename, Offset: uint32(offset)}
 
 	dm := NewDiskManager(tempDir)
 	p, err := dm.GetPage(loc)
@@ -43,7 +43,7 @@ func TestDiskManager_GetPage(t *testing.T) {
 func TestDiskManager_PersistPage(t *testing.T) {
 	filename := "users__2.db"
 	offset := 0
-	loc := &pageLocation{filename: filename, offset: uint32(offset)}
+	loc := &pageLocation{Filename: filename, Offset: uint32(offset)}
 
 	tuple := Tuple{Data: []TupleData{
 		{Typ: Int32, Int32Val: 96},
