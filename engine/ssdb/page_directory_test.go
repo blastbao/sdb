@@ -1,6 +1,7 @@
 package ssdb
 
 import (
+	"os"
 	"reflect"
 	"testing"
 
@@ -13,6 +14,37 @@ func TestEncodePageDirectoryID(t *testing.T) {
 	if string(given) != expected {
 		t.Errorf("unexpected: %v", given)
 	}
+}
+
+func Test_Save_Load_PageDirectory(t *testing.T) {
+	tempDir := os.TempDir()
+
+	// when no file exists, empty page directory will be responded
+	loaded, err := LoadPageDirectory(tempDir)
+	testutil.MustBeNil(t, err)
+	testutil.MustEqual(t, loaded, &PageDirectory{
+		pageIDs:             map[string][]PageID{},
+		pageLocation:        map[string]*pageLocation{},
+		maxPageCountPerFile: 1000,
+	})
+
+	pd := &PageDirectory{
+		pageIDs: map[string][]PageID{
+			"users": {PageID(1), PageID(3), PageID(5)},
+		},
+		pageLocation: map[string]*pageLocation{
+			"users#1": {Filename: "/tmp/users__1.db"},
+			"users#3": {Filename: "/tmp/users__1.db"},
+			"users#5": {Filename: "/tmp/users__1.db"},
+		},
+	}
+
+	err = pd.Save(tempDir)
+	testutil.MustBeNil(t, err)
+
+	loaded, err = LoadPageDirectory(tempDir)
+	testutil.MustBeNil(t, err)
+	testutil.MustEqual(t, loaded, pd)
 }
 
 func TestPageDirectory_GetPageIDs(t *testing.T) {

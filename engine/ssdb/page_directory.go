@@ -1,7 +1,11 @@
 package ssdb
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"os"
+	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -30,14 +34,54 @@ type PageDirectory struct {
 }
 
 // LoadPageDirectory loads page directory from the file on the disk.
-func LoadPageDirectory() (*PageDirectory, error) {
-	// TODO: decide how to encode/decode page directory file
-	return nil, nil
+func LoadPageDirectory(directory string) (*PageDirectory, error) {
+	var pd PageDirectory
+	filename := path.Join(directory, "__page_directory.db")
+
+	f, err := os.OpenFile(filename, os.O_RDONLY|os.O_CREATE, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("open file %s: %w", filename, err)
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("stat file %s: %w", filename, err)
+	}
+
+	if info.Size() == 0 {
+		// no page exists (e.g. run database for the first time)
+		return &PageDirectory{
+			pageIDs:             map[string][]PageID{},
+			pageLocation:        map[string]*pageLocation{},
+			maxPageCountPerFile: MaxPageCountPerFile,
+		}, nil
+	}
+
+	if err := json.NewDecoder(f).Decode(&pd); err != nil {
+		return nil, fmt.Errorf("decode file %s: %w", filename, err)
+	}
+
+	return &pd, nil
 }
 
 // Save saves page directory on the file on the disk.
-func (pd *PageDirectory) Save() error {
-	// TODO: decide how to encode/decode page directory file
+func (pd *PageDirectory) Save(directory string) error {
+	filename := path.Join(directory, "__page_directory.db")
+	buff := new(bytes.Buffer)
+
+	if err := json.NewEncoder(buff).Encode(pd); err != nil {
+		return err
+	}
+
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return fmt.Errorf("open file %s: %w", filename, err)
+	}
+
+	if _, err := f.Write(buff.Bytes()); err != nil {
+		return fmt.Errorf("write file %s: %w", filename, err)
+	}
+
 	return nil
 }
 
