@@ -20,6 +20,7 @@ type Tuple struct {
 type TupleData struct {
 	Typ       Type
 	Int32Val  int32
+	Int64Val  int64
 	Byte64Val [64]byte
 }
 
@@ -47,6 +48,7 @@ type Type uint32
 const (
 	// TODO: support more types
 	Int32 Type = iota + 1
+	Int64
 	Byte64
 )
 

@@ -15,7 +15,7 @@ func Test_Serialize_Deserialize_Tuple(t *testing.T) {
 	expected := make([]byte, 4+4+4+64)
 	copy(expected[0:4], []byte{0, 0, 0, 1})   // Type Int32
 	copy(expected[4:8], []byte{0, 0, 0, 99})  // Value 99
-	copy(expected[8:12], []byte{0, 0, 0, 2})  // Type Byte64
+	copy(expected[8:12], []byte{0, 0, 0, 3})  // Type Byte64
 	copy(expected[12:15], []byte{97, 98, 99}) // a, b, c
 	// rest bytes are zero-initialized
 
