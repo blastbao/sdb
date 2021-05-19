@@ -73,7 +73,7 @@ func (dm *DiskManager) LoadIndex() (map[string]*btree.BTree, error) {
 
 	indices := map[string]*btree.BTree{}
 	for _, indexFile := range indexFiles {
-		file, err := os.OpenFile(indexFile, os.O_RDONLY, 0755)
+		file, err := os.OpenFile(path.Join(dm.directory, indexFile), os.O_RDONLY, 0755)
 		if err != nil {
 			return nil, fmt.Errorf("open file %s: %w", indexFile, err)
 		}
