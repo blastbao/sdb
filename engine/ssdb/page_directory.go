@@ -93,6 +93,32 @@ func (pd *PageDirectory) GetPageLocation(table string, pageID PageID) (*pageLoca
 	return loc, nil
 }
 
+func (pd *PageDirectory) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("PageDirectory{\n")
+
+	sb.WriteString("  PageIDs{\n")
+	for table, pageIDs := range pd.PageIDs {
+		sPageIDs := make([]string, len(pageIDs))
+		for i, pid := range pageIDs {
+			sPageIDs[i] = strconv.Itoa(int(pid))
+		}
+		sb.WriteString(fmt.Sprintf("    %s: %v,\n", table, strings.Join(sPageIDs, ", ")))
+	}
+	sb.WriteString("  },\n")
+
+	sb.WriteString("  PageLocation{\n")
+	for pdid, loc := range pd.PageLocation {
+		sb.WriteString(fmt.Sprintf("    %s: {filename: %s, offset: %d},\n", pdid, loc.Filename, loc.Offset))
+	}
+	sb.WriteString("  },\n")
+
+	sb.WriteString(fmt.Sprintf("  MaxPageCountPerFile: %d,\n", pd.MaxPageCountPerFile))
+	sb.WriteString("}\n")
+
+	return sb.String()
+}
+
 func toFilename(table string, offset int) string {
 	return fmt.Sprintf("%s__%d.db", table, offset)
 }
