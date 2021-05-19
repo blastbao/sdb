@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/dty1er/sdb/btree"
 )
 
 // Tuple represents a row in a table. The size varies.
@@ -19,6 +21,7 @@ type Tuple struct {
 
 // TupleData represents a column in a row.
 type TupleData struct {
+	Key       bool
 	Typ       Type
 	Int32Val  int32
 	Int64Val  int64
@@ -111,6 +114,9 @@ func (t *Tuple) String() string {
 	// put spaces at the head to print as an element of page. See page.String()
 	sb.WriteString("    Tuple{\n")
 	for _, d := range t.Data {
+		if d.Key {
+			sb.WriteString("      (Key)\n")
+		}
 		switch d.Typ {
 		case Int32:
 			sb.WriteString(fmt.Sprintf("      (int32) %v,\n", d.Int32Val))
@@ -123,4 +129,28 @@ func (t *Tuple) String() string {
 	sb.WriteString("    },")
 
 	return sb.String()
+}
+
+// Less satisfies btree.Item interface
+func (t *Tuple) Less(than btree.Item) bool {
+	thanT := than.(*Tuple)
+	for _, data := range t.Data {
+		if data.Key {
+			for _, thanD := range thanT.Data {
+				if thanD.Key {
+					switch data.Typ {
+					case Int32:
+						return data.Int32Val < thanD.Int32Val
+					case Int64:
+						return data.Int64Val < thanD.Int64Val
+					case Byte64:
+						// bytes.Compare(a, b) returns negative if a < b
+						return bytes.Compare(data.Byte64Val[:], thanD.Byte64Val[:]) < 0
+					}
+				}
+			}
+		}
+	}
+
+	return false
 }

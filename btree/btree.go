@@ -11,78 +11,29 @@ import (
 	"sync"
 )
 
-type Entry struct {
-	Key   interface{}
-	Value interface{}
+type Item interface {
+	Less(than Item) bool
 }
 
 type Node struct {
 	Parent   *Node
-	Entries  []*Entry
+	Items    []Item
 	Children []*Node
 }
 
-// KeyType defines the type of key.
-type KeyType uint8
-
-const (
-	Int KeyType = iota + 1
-	String
-)
-
 type BTree struct {
-	Root    *Node // root node
-	Size    int   // count of keys in the tree
-	M       int   // maximum number of children
-	KeyType KeyType
-	latch   sync.RWMutex
+	Root  *Node // root node
+	Size  int   // count of keys in the tree
+	M     int   // maximum number of children
+	latch sync.RWMutex
 }
 
-var (
-	CompareInt = func(a, b interface{}) int {
-		ai := a.(int)
-		bi := b.(int)
-		if ai > bi {
-			return 1
-		} else if ai == bi {
-			return 0
-		} else {
-			return -1
-		}
-	}
-
-	CompareString = func(a, b interface{}) int {
-		as := a.(string)
-		bs := b.(string)
-		if as > bs {
-			return 1
-		} else if as == bs {
-			return 0
-		} else {
-			return -1
-		}
-	}
-)
-
-// NewIntKeyTree returns BTree whose key is integer type.
-func NewIntKeyTree() *BTree {
+func New() *BTree {
 	return &BTree{
-		Root:    nil,
-		Size:    0,
-		M:       3,
-		KeyType: Int,
-		latch:   sync.RWMutex{},
-	}
-}
-
-// NewStringKeyTree returns BTree whose key is string type.
-func NewStringKeyTree() *BTree {
-	return &BTree{
-		Root:    nil,
-		Size:    0,
-		M:       3,
-		KeyType: String,
-		latch:   sync.RWMutex{},
+		Root:  nil,
+		Size:  0,
+		M:     3,
+		latch: sync.RWMutex{},
 	}
 }
 
@@ -93,32 +44,30 @@ func NewStringKeyTree() *BTree {
  */
 
 // Put puts the given value by the given key to the BTree.
-func (bt *BTree) Put(key, value interface{}) {
-	e := &Entry{Key: key, Value: value}
-
+func (bt *BTree) Put(i Item) {
 	if bt.Root == nil {
-		bt.Root = &Node{Entries: []*Entry{e}, Children: nil}
+		bt.Root = &Node{Items: []Item{i}, Children: nil}
 		bt.Size++
 		return
 	}
 
-	if bt.insert(bt.Root, e) {
+	if bt.insert(bt.Root, i) {
 		bt.Size++
 	}
 }
 
 // Get retrieves a value by the given key.
-func (bt *BTree) Get(key interface{}) (interface{}, bool) {
+func (bt *BTree) Get(key Item) (Item, bool) {
 	node, index, found := bt.searchRecursively(bt.Root, key)
 	if found {
-		return node.Entries[index].Value, true
+		return node.Items[index], true
 	}
 
 	return nil, false
 }
 
 // TODO: change to Remove
-func (bt *BTree) remove(key interface{}) {
+func (bt *BTree) remove(key Item) {
 	// TODO: support deletion
 }
 
@@ -133,30 +82,23 @@ func (bt *BTree) Empty() bool {
  */
 
 // search searches the key from the given node by binary search.
-func (bt *BTree) search(node *Node, key interface{}) (int, bool) {
-	low, high := 0, len(node.Entries)-1
+func (bt *BTree) search(node *Node, key Item) (int, bool) {
+	low, high := 0, len(node.Items)-1
 	var mid int
 	for low <= high {
 		mid = (high + low) / 2
-		result := 0
-		if bt.KeyType == Int {
-			result = CompareInt(key, node.Entries[mid].Key)
-		} else {
-			result = CompareString(key, node.Entries[mid].Key)
-		}
-		switch {
-		case result > 0:
-			low = mid + 1
-		case result < 0:
+		if key.Less(node.Items[mid]) {
 			high = mid - 1
-		default:
+		} else if node.Items[mid].Less(key) {
+			low = mid + 1
+		} else {
 			return mid, true
 		}
 	}
 	return low, false
 }
 
-func (bt *BTree) searchRecursively(node *Node, key interface{}) (*Node, int, bool) {
+func (bt *BTree) searchRecursively(node *Node, key Item) (*Node, int, bool) {
 	if bt.Empty() {
 		return nil, -1, false
 	}
@@ -180,7 +122,7 @@ func (bt *BTree) isLeaf(node *Node) bool {
 }
 
 func (bt *BTree) shouldSplit(node *Node) bool {
-	return len(node.Entries) > bt.maxEntries()
+	return len(node.Items) > bt.maxEntries()
 }
 
 func (bt *BTree) maxEntries() int {
@@ -197,40 +139,40 @@ func (bt *BTree) middle() int {
  * --------------------
  */
 
-func (bt *BTree) insert(node *Node, entry *Entry) bool {
+func (bt *BTree) insert(node *Node, item Item) bool {
 	if bt.isLeaf(node) {
-		return bt.insertIntoLeaf(node, entry)
+		return bt.insertIntoLeaf(node, item)
 	}
-	return bt.insertIntoInternal(node, entry)
+	return bt.insertIntoInternal(node, item)
 }
 
 // insertIntoLeaf inserts the entry to the node. It assumes that the node is leaf.
-func (bt *BTree) insertIntoLeaf(node *Node, entry *Entry) bool {
-	insertPos, found := bt.search(node, entry.Key)
+func (bt *BTree) insertIntoLeaf(node *Node, item Item) bool {
+	insertPos, found := bt.search(node, item)
 	// when the key is already in the tree, update it
 	if found {
-		node.Entries[insertPos] = entry
+		node.Items[insertPos] = item
 		return false
 	}
 
 	// insert the entry in the middle of the entries of the node
-	node.Entries = append(node.Entries, nil)
-	copy(node.Entries[insertPos+1:], node.Entries[insertPos:])
-	node.Entries[insertPos] = entry
+	node.Items = append(node.Items, nil)
+	copy(node.Items[insertPos+1:], node.Items[insertPos:])
+	node.Items[insertPos] = item
 	bt.split(node) // split the node if needed
 	return true
 }
 
 // insertIntoInternal inserts the entry to the node.
-func (bt *BTree) insertIntoInternal(node *Node, entry *Entry) bool {
-	insertPos, found := bt.search(node, entry.Key)
+func (bt *BTree) insertIntoInternal(node *Node, item Item) bool {
+	insertPos, found := bt.search(node, item)
 	// when the key is already in the tree, update it
 	if found {
-		node.Entries[insertPos] = entry
+		node.Items[insertPos] = item
 		return false
 	}
 
-	return bt.insert(node.Children[insertPos], entry)
+	return bt.insert(node.Children[insertPos], item)
 }
 
 // split splits the node if rebalancing needed.
@@ -252,8 +194,8 @@ func (bt *BTree) splitRoot() {
 	middle := bt.middle()
 
 	// split root into left and right
-	left := &Node{Entries: append([]*Entry(nil), bt.Root.Entries[:middle]...)}
-	right := &Node{Entries: append([]*Entry(nil), bt.Root.Entries[middle+1:]...)}
+	left := &Node{Items: append([]Item(nil), bt.Root.Items[:middle]...)}
+	right := &Node{Items: append([]Item(nil), bt.Root.Items[middle+1:]...)}
 
 	if !bt.isLeaf(bt.Root) {
 		// split root children into left.Children and right.Children
@@ -264,7 +206,7 @@ func (bt *BTree) splitRoot() {
 	}
 
 	newRoot := &Node{
-		Entries:  []*Entry{bt.Root.Entries[middle]},
+		Items:    []Item{bt.Root.Items[middle]},
 		Children: []*Node{left, right},
 	}
 	left.Parent = newRoot
@@ -277,8 +219,8 @@ func (bt *BTree) splitNonRoot(node *Node) {
 	parent := node.Parent
 
 	// split node into left and right
-	left := &Node{Entries: append([]*Entry(nil), node.Entries[:middle]...), Parent: parent}
-	right := &Node{Entries: append([]*Entry(nil), node.Entries[middle+1:]...), Parent: parent}
+	left := &Node{Items: append([]Item(nil), node.Items[:middle]...), Parent: parent}
+	right := &Node{Items: append([]Item(nil), node.Items[middle+1:]...), Parent: parent}
 
 	if !bt.isLeaf(node) {
 		// split node children into left.Children and right.Children
@@ -288,12 +230,12 @@ func (bt *BTree) splitNonRoot(node *Node) {
 		setParent(right.Children, right)
 	}
 
-	insertPos, _ := bt.search(parent, node.Entries[middle].Key)
+	insertPos, _ := bt.search(parent, node.Items[middle])
 
 	// insert middle entry into parent
-	parent.Entries = append(parent.Entries, nil)
-	copy(parent.Entries[insertPos+1:], parent.Entries[insertPos:])
-	parent.Entries[insertPos] = node.Entries[middle]
+	parent.Items = append(parent.Items, nil)
+	copy(parent.Items[insertPos+1:], parent.Items[insertPos:])
+	parent.Items[insertPos] = node.Items[middle]
 
 	// set inserted entry's child left to the created left
 	parent.Children[insertPos] = left
@@ -352,25 +294,28 @@ func (bt *BTree) String() string {
 }
 
 func (bt *BTree) output(buffer *bytes.Buffer, node *Node, level int, isTail bool) {
-	for e := 0; e < len(node.Entries)+1; e++ {
+	for e := 0; e < len(node.Items)+1; e++ {
 		if e < len(node.Children) {
 			bt.output(buffer, node.Children[e], level+1, true)
 		}
-		if e < len(node.Entries) {
+		if e < len(node.Items) {
 			if _, err := buffer.WriteString(strings.Repeat("    ", level)); err != nil {
 			}
-			if _, err := buffer.WriteString(fmt.Sprintf("%v", node.Entries[e].Key) + "\n"); err != nil {
+			if _, err := buffer.WriteString(fmt.Sprintf("%v", node.Items[e]) + "\n"); err != nil {
 			}
 		}
 	}
-}
-
-func (entry *Entry) String() string {
-	return fmt.Sprintf("%v", entry.Key)
 }
 
 // RegisterSerializationTarget registers the target value to the serialization.
 // This must be called before serializint the btree which contains the value type element.
 func RegisterSerializationTarget(value interface{}) {
 	gob.Register(value)
+}
+
+type IntItem int
+
+func (i IntItem) Less(than Item) bool {
+	t := than.(IntItem)
+	return i < t
 }

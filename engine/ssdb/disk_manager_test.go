@@ -70,6 +70,8 @@ func TestDiskManager_PersistPage(t *testing.T) {
 }
 
 func TestDiskManager_LoadIndex(t *testing.T) {
+	btree.RegisterSerializationTarget(btree.IntItem(0))
+
 	tempDir := os.TempDir()
 	writeIndex := func(t *testing.T, filename string, bt *btree.BTree) {
 		file, err := os.OpenFile(path.Join(tempDir, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
@@ -79,15 +81,17 @@ func TestDiskManager_LoadIndex(t *testing.T) {
 		file.Write(s)
 	}
 	// testdata 1
-	bt := btree.NewIntKeyTree()
-	bt.Put(1, "1")
+	// testdata 1
+	bt := btree.New()
+	bt.Put(btree.IntItem(1))
+
 	filename := "user_accounts.idx"
 	writeIndex(t, filename, bt)
 	defer os.Remove(path.Join(tempDir, filename))
 
 	// testdata 2
-	bt2 := btree.NewIntKeyTree()
-	bt2.Put(2, "2")
+	bt2 := btree.New()
+	bt2.Put(btree.IntItem(2))
 	filename2 := "items.idx"
 	writeIndex(t, filename2, bt2)
 	defer os.Remove(path.Join(tempDir, filename2))
@@ -110,6 +114,8 @@ func TestDiskManager_LoadIndex(t *testing.T) {
 }
 
 func TestDiskManager_PersistIndex(t *testing.T) {
+	btree.RegisterSerializationTarget(btree.IntItem(0))
+
 	tempDir := os.TempDir()
 	readIndex := func(t *testing.T, filename string) *btree.BTree {
 		file, err := os.OpenFile(path.Join(tempDir, filename), os.O_RDONLY, 0755)
@@ -121,12 +127,12 @@ func TestDiskManager_PersistIndex(t *testing.T) {
 		return b
 	}
 	// testdata 1
-	bt := btree.NewIntKeyTree()
-	bt.Put(1, "1")
+	bt := btree.New()
+	bt.Put(btree.IntItem(1))
 
 	// testdata 2
-	bt2 := btree.NewIntKeyTree()
-	bt2.Put(2, "2")
+	bt2 := btree.New()
+	bt2.Put(btree.IntItem(2))
 
 	dm := NewDiskManager(tempDir)
 

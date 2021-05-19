@@ -63,21 +63,16 @@ const (
 )
 
 // CreateIndex initializes the btree index.
-func (e *Engine) CreateIndex(idxName string, keyType KeyType) {
-	var bt *btree.BTree
-	if keyType == Int {
-		bt = btree.NewIntKeyTree()
-	} else {
-		bt = btree.NewStringKeyTree()
-	}
+func (e *Engine) CreateIndex(idxName string) {
+	bt := btree.New()
 
 	e.bufferPool.indices[idxName] = bt
 }
 
 // InsertIndex inserts a record to the index
-func (e *Engine) InsertIndex(idxName string, key int, t *Tuple) error {
+func (e *Engine) InsertIndex(idxName string, t *Tuple) error {
 	index := e.bufferPool.indices[idxName]
-	index.Put(key, t)
+	index.Put(t)
 
 	return nil
 }
