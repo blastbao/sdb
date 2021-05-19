@@ -5,7 +5,7 @@ package btree
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/gob"
 	"fmt"
 	"sync"
 )
@@ -96,7 +96,7 @@ func (bt *BTree) Put(key, value interface{}) {
 	e := &Entry{Key: key, Value: value}
 
 	if bt.Root == nil {
-		bt.Root = &Node{Entries: []*Entry{e}, Children: []*Node{}}
+		bt.Root = &Node{Entries: []*Entry{e}, Children: nil}
 		bt.Size++
 		return
 	}
@@ -318,9 +318,10 @@ func setParent(nodes []*Node, parent *Node) {
 	}
 }
 
+// Serialize serializes the btree using encoding/gob
 func (bt *BTree) Serialize() ([]byte, error) {
 	buff := new(bytes.Buffer)
-	if err := json.NewEncoder(buff).Encode(&bt); err != nil {
+	if err := gob.NewEncoder(buff).Encode(&bt); err != nil {
 		return nil, fmt.Errorf("serialize btree: %w", err)
 	}
 
@@ -330,7 +331,7 @@ func (bt *BTree) Serialize() ([]byte, error) {
 func Deserialize(bs []byte) (*BTree, error) {
 	var bt BTree
 	buff := bytes.NewBuffer(bs)
-	if err := json.NewDecoder(buff).Decode(&bt); err != nil {
+	if err := gob.NewDecoder(buff).Decode(&bt); err != nil {
 		return nil, fmt.Errorf("deserialize btree: %w", err)
 	}
 
