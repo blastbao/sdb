@@ -25,6 +25,10 @@ func NewDiskManager(directory string) *DiskManager {
 
 func (dm *DiskManager) GetPage(loc *pageLocation) (*Page, error) {
 	filename := path.Join(dm.directory, loc.Filename)
+	if _, err := os.Stat(filename); err != nil {
+		return &Page{}, nil // when run database for the first time
+	}
+
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open file %s: %w", filename, err)
@@ -117,6 +121,10 @@ func (dm *DiskManager) PersistIndex(table string, index *btree.BTree) error {
 
 func (dm *DiskManager) LoadPageDirectory() (*PageDirectory, error) {
 	filename := path.Join(dm.directory, "__page_directory.db")
+	if _, err := os.Stat(filename); err != nil {
+		return NewPageDirectory(), nil // when run database for the first time
+	}
+
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
 	if err != nil {
 		return nil, fmt.Errorf("open file %s, %w", filename, err)

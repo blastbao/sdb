@@ -29,6 +29,14 @@ type PageDirectory struct {
 	MaxPageCountPerFile int
 }
 
+func NewPageDirectory() *PageDirectory {
+	return &PageDirectory{
+		PageIDs:             map[string][]PageID{},
+		PageLocation:        map[string]*pageLocation{},
+		MaxPageCountPerFile: MaxPageCountPerFile,
+	}
+}
+
 func (pd *PageDirectory) GetPageIDs(table string) []PageID {
 	return pd.PageIDs[table]
 }
