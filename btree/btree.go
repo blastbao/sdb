@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -337,6 +338,35 @@ func Deserialize(bs []byte) (*BTree, error) {
 
 	bt.latch = sync.RWMutex{}
 	return &bt, nil
+}
+
+// String returns a string representation of container (for debugging purposes)
+func (bt *BTree) String() string {
+	var buffer bytes.Buffer
+	if _, err := buffer.WriteString("BTree\n"); err != nil {
+	}
+	if !bt.Empty() {
+		bt.output(&buffer, bt.Root, 0, true)
+	}
+	return buffer.String()
+}
+
+func (bt *BTree) output(buffer *bytes.Buffer, node *Node, level int, isTail bool) {
+	for e := 0; e < len(node.Entries)+1; e++ {
+		if e < len(node.Children) {
+			bt.output(buffer, node.Children[e], level+1, true)
+		}
+		if e < len(node.Entries) {
+			if _, err := buffer.WriteString(strings.Repeat("    ", level)); err != nil {
+			}
+			if _, err := buffer.WriteString(fmt.Sprintf("%v", node.Entries[e].Key) + "\n"); err != nil {
+			}
+		}
+	}
+}
+
+func (entry *Entry) String() string {
+	return fmt.Sprintf("%v", entry.Key)
 }
 
 // RegisterSerializationTarget registers the target value to the serialization.
