@@ -26,7 +26,7 @@ func NewDiskManager(directory string) *DiskManager {
 func (dm *DiskManager) GetPage(loc *pageLocation) (*Page, error) {
 	filename := path.Join(dm.directory, loc.Filename)
 	if _, err := os.Stat(filename); err != nil {
-		return &Page{}, nil // when run database for the first time
+		return NewPage([PageSize]byte{}), nil // when run database for the first time
 	}
 
 	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
@@ -40,7 +40,7 @@ func (dm *DiskManager) GetPage(loc *pageLocation) (*Page, error) {
 		return nil, fmt.Errorf("read file %s at %d: %w", filename, loc.Offset, err)
 	}
 
-	return &Page{bs: buff}, nil
+	return NewPage(buff), nil
 }
 
 func (dm *DiskManager) PersistPage(loc *pageLocation, page *Page) error {
