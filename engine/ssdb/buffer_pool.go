@@ -58,7 +58,7 @@ func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
 
 // AppendTuple finds the page from page directory then puts tuple in it.
 // If the page is not found, false will be responded.
-func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple Tuple) bool {
+func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple *Tuple) bool {
 	key := bp.cacheKey(tableName, pageID)
 
 	// First, try to fetch the page for the table from cache

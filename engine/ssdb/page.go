@@ -43,7 +43,7 @@ type slot struct {
 type pageHeader struct {
 	id          PageID // [4]byte
 	tuplesCount uint16 // [2]byte
-	slots       []slot
+	slots       []*slot
 }
 
 func NewPage(id uint32) *Page {
@@ -70,10 +70,10 @@ func (p *Page) decodeHeader() pageHeader {
 	h := pageHeader{}
 	h.id = PageID(bytesToUint32(p.bs[0:]))
 	h.tuplesCount = bytesToUint16(p.bs[4:])
-	h.slots = make([]slot, h.tuplesCount)
+	h.slots = make([]*slot, h.tuplesCount)
 
 	for i := 0; i < int(h.tuplesCount); i++ {
-		s := slot{}
+		s := &slot{}
 		o := i * 4 // offset
 		s.offset = bytesToUint16(p.bs[6+o:])
 		s.length = bytesToUint16(p.bs[8+o:])
@@ -83,7 +83,7 @@ func (p *Page) decodeHeader() pageHeader {
 	return h
 }
 
-func (p *Page) AppendTuple(t Tuple) error {
+func (p *Page) AppendTuple(t *Tuple) error {
 	tb := SerializeTuple(t)
 
 	header := p.decodeHeader()
@@ -104,7 +104,7 @@ func (p *Page) AppendTuple(t Tuple) error {
 	copy(p.bs[start:last], tb)
 
 	header.tuplesCount++
-	header.slots = append(header.slots, slot{offset: uint16(start), length: uint16(len(tb))})
+	header.slots = append(header.slots, &slot{offset: uint16(start), length: uint16(len(tb))})
 	copy(p.bs[0:], header.encode())
 
 	return nil

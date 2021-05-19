@@ -13,7 +13,7 @@ import (
 // e.g. When the type is int32, the length is 4byte (=32bit).
 //      When the type is [64]byte, the length is 64 byte.
 type Tuple struct {
-	Data []TupleData
+	Data []*TupleData
 }
 
 // TupleData represents a column in a row.
@@ -26,13 +26,13 @@ type TupleData struct {
 // NewTuple returns a tuple which represents a row in a table.
 // values are supposed to be the multiple column value of a column.
 func NewTuple(values []interface{}) *Tuple {
-	t := &Tuple{Data: make([]TupleData, len(values))}
+	t := &Tuple{Data: make([]*TupleData, len(values))}
 	for i, v := range values {
 		switch actual := v.(type) {
 		case int32:
-			t.Data[i] = TupleData{Typ: Int32, Int32Val: actual}
+			t.Data[i] = &TupleData{Typ: Int32, Int32Val: actual}
 		case [64]byte:
-			t.Data[i] = TupleData{Typ: Byte64, Byte64Val: actual}
+			t.Data[i] = &TupleData{Typ: Byte64, Byte64Val: actual}
 		default:
 			fmt.Fprintf(os.Stdout, "[WARN] unexpected type in init tuple")
 		}
@@ -51,7 +51,7 @@ const (
 )
 
 // Serialize encodes given t into byte slice. The size is not fixed.
-func SerializeTuple(t Tuple) []byte {
+func SerializeTuple(t *Tuple) []byte {
 	var buf bytes.Buffer
 	for _, d := range t.Data {
 		var result []byte
@@ -75,8 +75,8 @@ func SerializeTuple(t Tuple) []byte {
 }
 
 // Deserialize decodes given byte slice to a tuple.
-func DeserializeTuple(bs []byte) Tuple {
-	t := Tuple{}
+func DeserializeTuple(bs []byte) *Tuple {
+	t := &Tuple{}
 	offset := 0
 	for {
 		if len(bs) <= offset { // return once finished reading bs
@@ -86,12 +86,12 @@ func DeserializeTuple(bs []byte) Tuple {
 		typ := Type(bytesToUint32(bs[offset : offset+4]))
 		switch typ {
 		case Int32: // 4byte
-			d := TupleData{Typ: Int32}
+			d := &TupleData{Typ: Int32}
 			d.Int32Val = int32(bytesToUint32(bs[offset+4 : offset+4+4]))
 			offset += 4 + 4
 			t.Data = append(t.Data, d)
 		case Byte64:
-			d := TupleData{Typ: Byte64}
+			d := &TupleData{Typ: Byte64}
 			var buff [64]byte
 			copy(buff[:], bs[offset+4:offset+4+64])
 			d.Byte64Val = buff

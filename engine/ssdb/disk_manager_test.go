@@ -15,7 +15,7 @@ import (
 func TestDiskManager_GetPage(t *testing.T) {
 	tempDir := os.TempDir()
 	// testdata
-	tuple := Tuple{Data: []TupleData{
+	tuple := &Tuple{Data: []*TupleData{
 		{Typ: Int32, Int32Val: 96},
 		{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 	}}
@@ -49,7 +49,7 @@ func TestDiskManager_PersistPage(t *testing.T) {
 	offset := 0
 	loc := &pageLocation{Filename: filename, Offset: uint32(offset)}
 
-	tuple := Tuple{Data: []TupleData{
+	tuple := &Tuple{Data: []*TupleData{
 		{Typ: Int32, Int32Val: 96},
 		{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 	}}

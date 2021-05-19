@@ -45,15 +45,15 @@ func TestBufferPool_AppendTuple(t *testing.T) {
 	bp := NewBufferPool(2, nil)
 
 	// make sure false is responded when no page on cache
-	appended := bp.AppendTuple(table, 1, Tuple{})
+	appended := bp.AppendTuple(table, 1, &Tuple{})
 	testutil.MustEqual(t, appended, false)
 
 	// make sure true is responded when the page is found on cache
-	dummyTuple := Tuple{Data: []TupleData{{Typ: Int32, Int32Val: 96}}}
+	dummyTuple := &Tuple{Data: []*TupleData{{Typ: Int32, Int32Val: 96}}}
 
 	page1 := NewPage(1)
 	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})
-	appended = bp.AppendTuple(table, 1, Tuple{})
+	appended = bp.AppendTuple(table, 1, &Tuple{})
 	testutil.MustEqual(t, appended, true)
 	page1Descriptor := bp.frames.Get(bp.cacheKey(table, 1)).(*pageDescriptor)
 	testutil.MustEqual(t, page1Descriptor.dirty, true) // make sure the descriptor is marked dirty

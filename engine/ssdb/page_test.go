@@ -11,7 +11,7 @@ func TestPageHeader_encode(t *testing.T) {
 	ph := &pageHeader{
 		id:          42,
 		tuplesCount: 3,
-		slots: []slot{
+		slots: []*slot{
 			{offset: 0, length: 10},
 			{offset: 10, length: 25},
 			{offset: 35, length: 50},
@@ -49,27 +49,27 @@ func TestNewPage(t *testing.T) {
 }
 
 func TestPage_AppendTuple(t *testing.T) {
-	tuples := []Tuple{
+	tuples := []*Tuple{
 		{
-			Data: []TupleData{
+			Data: []*TupleData{
 				{Typ: Int32, Int32Val: 96},
 				{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 			},
 		},
 		{
-			Data: []TupleData{
+			Data: []*TupleData{
 				{Typ: Int32, Int32Val: 97},
 				{Typ: Byte64, Byte64Val: [64]byte{'d', 'e', 'f'}},
 			},
 		},
 		{
-			Data: []TupleData{
+			Data: []*TupleData{
 				{Typ: Byte64, Byte64Val: [64]byte{'g', 'h', 'i', 'j', 'k'}},
 				{Typ: Int32, Int32Val: 98},
 			},
 		},
 		{
-			Data: []TupleData{
+			Data: []*TupleData{
 				{Typ: Byte64, Byte64Val: [64]byte{'l', 'm', 'n', 'o', 'p'}},
 				{Typ: Int32, Int32Val: 99},
 			},
@@ -105,8 +105,8 @@ func TestPage_AppendTuple(t *testing.T) {
 	}
 
 	// make sure err is responded when the page has no space
-	tuple := Tuple{
-		Data: []TupleData{
+	tuple := &Tuple{
+		Data: []*TupleData{
 			{Typ: Int32, Int32Val: 96},
 			{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 		},
