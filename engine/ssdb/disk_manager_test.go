@@ -19,7 +19,7 @@ func TestDiskManager_GetPage(t *testing.T) {
 		{Typ: Int32, Int32Val: 96},
 		{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 	}}
-	page := NewPage(42)
+	page := InitPage(42)
 	page.AppendTuple(tuple)
 
 	filename := "users__1.db"
@@ -53,7 +53,7 @@ func TestDiskManager_PersistPage(t *testing.T) {
 		{Typ: Int32, Int32Val: 96},
 		{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
 	}}
-	page := NewPage(42)
+	page := InitPage(42)
 	page.AppendTuple(tuple)
 
 	tempDir := os.TempDir()

@@ -34,7 +34,7 @@ func TestPageHeader_encode(t *testing.T) {
 }
 
 func TestNewPage(t *testing.T) {
-	page := NewPage(42)
+	page := InitPage(42)
 	expected := [16 * 1024]byte{}
 	copy(expected[0:4], []byte{0, 0, 0, 42})
 	if !reflect.DeepEqual(page.bs, expected) {
@@ -75,7 +75,7 @@ func TestPage_AppendTuple(t *testing.T) {
 			},
 		},
 	}
-	page := NewPage(42)
+	page := InitPage(42)
 
 	for _, tuple := range tuples {
 		if err := page.AppendTuple(tuple); err != nil {
@@ -119,7 +119,7 @@ func TestPage_AppendTuple(t *testing.T) {
 	// +4 because a slot is 4 byte
 	max := (PageSize - 4 - 2) / (tupleSize + 4)
 
-	page = NewPage(50)
+	page = InitPage(50)
 	// append $max tuples in the page.
 	// Error should not happen.
 	for i := 0; i < max; i++ {

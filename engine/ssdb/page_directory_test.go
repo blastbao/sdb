@@ -57,7 +57,7 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 			},
 			maxPageCountPerFile: 50,
 			table:               "users",
-			page:                NewPage(1),
+			page:                InitPage(1),
 
 			wantPageIDs: map[string][]PageID{
 				"items": {PageID(1)},
@@ -80,7 +80,7 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 			},
 			maxPageCountPerFile: 10,
 			table:               "items",
-			page:                NewPage(4),
+			page:                InitPage(4),
 
 			wantPageIDs: map[string][]PageID{
 				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},
@@ -104,7 +104,7 @@ func TestPageDirectory_RegisterPage(t *testing.T) {
 			},
 			maxPageCountPerFile: 3, // because 1 page should have 3 pages, new file will be added
 			table:               "items",
-			page:                NewPage(4),
+			page:                InitPage(4),
 
 			wantPageIDs: map[string][]PageID{
 				"items": {PageID(1), PageID(2), PageID(3), PageID(4)},

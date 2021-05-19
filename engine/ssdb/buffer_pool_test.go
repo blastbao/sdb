@@ -10,9 +10,9 @@ func TestBufferPool_InsertPage(t *testing.T) {
 	table := "users"
 	bp := NewBufferPool(2, nil)
 
-	page1 := NewPage(1)
-	page2 := NewPage(2)
-	page3 := NewPage(3)
+	page1 := InitPage(1)
+	page2 := InitPage(2)
+	page3 := InitPage(3)
 
 	nilPage := (*Page)(nil)
 	evicted := bp.InsertPage(table, page1)
@@ -51,7 +51,7 @@ func TestBufferPool_AppendTuple(t *testing.T) {
 	// make sure true is responded when the page is found on cache
 	dummyTuple := &Tuple{Data: []*TupleData{{Typ: Int32, Int32Val: 96}}}
 
-	page1 := NewPage(1)
+	page1 := InitPage(1)
 	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})
 	appended = bp.AppendTuple(table, 1, &Tuple{})
 	testutil.MustEqual(t, appended, true)

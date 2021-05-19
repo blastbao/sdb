@@ -35,6 +35,10 @@ type Page struct {
 	bs [PageSize]byte
 }
 
+func NewPage(bs [PageSize]byte) *Page {
+	return &Page{bs: bs}
+}
+
 type slot struct {
 	offset uint16 // [2]byte
 	length uint16 // [2]byte
@@ -46,7 +50,7 @@ type pageHeader struct {
 	slots       []*slot
 }
 
-func NewPage(id uint32) *Page {
+func InitPage(id uint32) *Page {
 	bs := [PageSize]byte{}
 	putUint32OnBytes(bs[0:], id)
 	putUint16OnBytes(bs[4:], 0) // tuple count is initially 0
