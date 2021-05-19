@@ -24,9 +24,9 @@ type BufferPool struct {
 	indices map[string]*btree.BTree
 }
 
-func NewBufferPool(entryCount int, index map[string]*btree.BTree) *BufferPool {
+func NewBufferPool(entryCount int, indices map[string]*btree.BTree) *BufferPool {
 	frames := lru.New(lru.WithCap(entryCount))
-	return &BufferPool{frames: frames}
+	return &BufferPool{frames: frames, indices: indices}
 }
 
 // cacheKey encodes the cache key from the given arguments.
