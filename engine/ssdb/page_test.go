@@ -1,7 +1,6 @@
 package ssdb
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/dty1er/sdb/testutil"
@@ -33,19 +32,14 @@ func TestPageHeader_encode(t *testing.T) {
 	)
 }
 
-func TestNewPage(t *testing.T) {
+func TestInitPage(t *testing.T) {
 	page := InitPage(42)
 	expected := [16 * 1024]byte{}
 	copy(expected[0:4], []byte{0, 0, 0, 42})
-	if !reflect.DeepEqual(page.bs, expected) {
-		t.Errorf("unexpected empty page: %v, expected: %v", page, expected)
-	}
+	testutil.MustEqual(t, page.bs, expected)
 
 	id := page.GetID()
-
-	if id != PageID(42) {
-		t.Errorf("unexpected id: %d", id)
-	}
+	testutil.MustEqual(t, id, PageID(42))
 }
 
 func TestPage_AppendTuple(t *testing.T) {
@@ -78,30 +72,19 @@ func TestPage_AppendTuple(t *testing.T) {
 	page := InitPage(42)
 
 	for _, tuple := range tuples {
-		if err := page.AppendTuple(tuple); err != nil {
-			t.Errorf("unexpected error: %s", err)
-		}
+		err := page.AppendTuple(tuple)
+		testutil.MustBeNil(t, err)
 	}
 
 	header := page.decodeHeader()
-	if header.id != 42 {
-		t.Errorf("unexpected page id: %v", header.id)
-	}
-
-	if header.tuplesCount != 4 {
-		t.Errorf("unexpected tuplesCount: %v", header.tuplesCount)
-	}
-
-	if len(header.slots) != 4 {
-		t.Errorf("unexpected slots: %v", header.slots)
-	}
+	testutil.MustEqual(t, header.id, PageID(42))
+	testutil.MustEqual(t, header.tuplesCount, uint16(4))
+	testutil.MustEqual(t, len(header.slots), 4)
 
 	for i := 0; i < int(header.tuplesCount); i++ {
 		slot := header.slots[i]
 		tp := DeserializeTuple(page.bs[slot.offset : slot.offset+slot.length])
-		if !reflect.DeepEqual(tp, tuples[i]) {
-			t.Errorf("unexpected deserialized tuple: %v", t)
-		}
+		testutil.MustEqual(t, tp, tuples[i])
 	}
 
 	// make sure err is responded when the page has no space
@@ -123,14 +106,12 @@ func TestPage_AppendTuple(t *testing.T) {
 	// append $max tuples in the page.
 	// Error should not happen.
 	for i := 0; i < max; i++ {
-		if err := page.AppendTuple(tuple); err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
+		err := page.AppendTuple(tuple)
+		testutil.MustBeNil(t, err)
 	}
 
 	// because the page already contains $max tuples,
 	// no available space error must happen.
-	if err := page.AppendTuple(tuple); err == nil {
-		t.Errorf("error must happen")
-	}
+	err := page.AppendTuple(tuple)
+	testutil.MustEqual(t, err == nil, false)
 }

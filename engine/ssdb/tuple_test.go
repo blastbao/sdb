@@ -1,8 +1,9 @@
 package ssdb
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/dty1er/sdb/testutil"
 )
 
 func Test_Serialize_Deserialize_Tuple(t *testing.T) {
@@ -19,20 +20,10 @@ func Test_Serialize_Deserialize_Tuple(t *testing.T) {
 	copy(expected[12:15], []byte{97, 98, 99}) // a, b, c
 	// rest bytes are zero-initialized
 
-	if !reflect.DeepEqual(s, expected) {
-		t.Errorf("unexpected serialized bytes: \n%v, expected: \n%v", s, expected)
-	}
+	testutil.MustEqual(t, s, expected)
 
 	nt := DeserializeTuple(s)
-	if len(nt.Data) != 2 {
-		t.Errorf("unexpected length: %d", len(nt.Data))
-	}
-
-	if !reflect.DeepEqual(nt.Data[0], &TupleData{Typ: Int32, Int32Val: 99}) {
-		t.Errorf("unexpected Data[0]: %v", nt.Data[0])
-	}
-
-	if !reflect.DeepEqual(nt.Data[1], &TupleData{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}}) {
-		t.Errorf("unexpected Data[1]: %v", nt.Data[1])
-	}
+	testutil.MustEqual(t, len(nt.Data), 2)
+	testutil.MustEqual(t, nt.Data[0], &TupleData{Typ: Int32, Int32Val: 99})
+	testutil.MustEqual(t, nt.Data[1], &TupleData{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}})
 }

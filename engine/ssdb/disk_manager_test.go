@@ -26,9 +26,7 @@ func TestDiskManager_GetPage(t *testing.T) {
 	offset := 0
 
 	file, err := os.OpenFile(path.Join(tempDir, filename), os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
-	if err != nil {
-		t.Fatalf("failed to open file %s: %s", filename, err)
-	}
+	testutil.MustBeNil(t, err)
 	defer os.Remove(path.Join(tempDir, filename))
 
 	file.WriteAt(page.bs[:], int64(offset))
@@ -37,9 +35,7 @@ func TestDiskManager_GetPage(t *testing.T) {
 
 	dm := NewDiskManager(tempDir)
 	p, err := dm.GetPage(loc)
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
+	testutil.MustBeNil(t, err)
 
 	testutil.MustEqual(t, p, page)
 }
@@ -58,21 +54,16 @@ func TestDiskManager_PersistPage(t *testing.T) {
 
 	tempDir := os.TempDir()
 	dm := NewDiskManager(tempDir)
-	if err := dm.PersistPage(loc, page); err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
+	err := dm.PersistPage(loc, page)
+	testutil.MustBeNil(t, err)
 
 	file, err := os.OpenFile(path.Join(tempDir, filename), os.O_RDONLY, 0755)
-	if err != nil {
-		t.Fatalf("failed to open file %s: %s", filename, err)
-	}
+	testutil.MustBeNil(t, err)
 	defer os.Remove(path.Join(tempDir, filename))
 
 	var bs [PageSize]byte
 	n, err := file.ReadAt(bs[:], int64(offset))
-	if err != nil {
-		t.Fatalf("failed to read file %s: %s", filename, err)
-	}
+	testutil.MustBeNil(t, err)
 
 	testutil.MustEqual(t, n, PageSize)
 	testutil.MustEqual(t, bs, page.bs)

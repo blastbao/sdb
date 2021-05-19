@@ -1,7 +1,6 @@
 package ssdb
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/dty1er/sdb/testutil"
@@ -10,9 +9,7 @@ import (
 func TestEncodePageDirectoryID(t *testing.T) {
 	given := EncodePageDirectoryID("users", PageID(5))
 	expected := "users#5"
-	if string(given) != expected {
-		t.Errorf("unexpected: %v", given)
-	}
+	testutil.MustEqual(t, string(given), expected)
 }
 
 func TestPageDirectory_GetPageIDs(t *testing.T) {
@@ -21,18 +18,11 @@ func TestPageDirectory_GetPageIDs(t *testing.T) {
 	}
 
 	ids := pd.GetPageIDs("items")
-	if len(ids) != 0 {
-		t.Errorf("unexpected length: %d", len(ids))
-	}
+	testutil.MustEqual(t, len(ids), 0)
 
 	ids = pd.GetPageIDs("users")
-	if len(ids) != 3 {
-		t.Errorf("unexpected length: %d", len(ids))
-	}
-
-	if !reflect.DeepEqual(ids, []PageID{PageID(1), PageID(3), PageID(5)}) {
-		t.Errorf("unexpected: %v", ids)
-	}
+	testutil.MustEqual(t, len(ids), 3)
+	testutil.MustEqual(t, ids, []PageID{PageID(1), PageID(3), PageID(5)})
 }
 
 func TestPageDirectory_RegisterPage(t *testing.T) {
@@ -151,44 +141,23 @@ func TestPageDirectory_GetPageLocation(t *testing.T) {
 	}
 
 	p1, err := pd.GetPageLocation("users", PageID(1))
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
-	}
-
-	if !reflect.DeepEqual(p1, locations[0]) {
-		t.Errorf("unexpected page: %v", p1)
-	}
+	testutil.MustBeNil(t, err)
+	testutil.MustEqual(t, p1, locations[0])
 
 	p2, err := pd.GetPageLocation("users", PageID(2))
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
-	}
-
-	if !reflect.DeepEqual(p2, locations[1]) {
-		t.Errorf("unexpected page: %v", p2)
-	}
+	testutil.MustBeNil(t, err)
+	testutil.MustEqual(t, p2, locations[1])
 
 	p3, err := pd.GetPageLocation("users", PageID(3))
-	if err != nil {
-		t.Errorf("unexpected error: %s", err)
-	}
-
-	if !reflect.DeepEqual(p3, locations[2]) {
-		t.Errorf("unexpected page: %v", p1)
-	}
+	testutil.MustBeNil(t, err)
+	testutil.MustEqual(t, p3, locations[2])
 }
 
 func Test_toFilename_fileInfoFromFilename(t *testing.T) {
 	filename := toFilename("user_accounts", 3)
-	if filename != "user_accounts__3.db" {
-		t.Errorf("unexpected filename: %s", filename)
-	}
+	testutil.MustEqual(t, filename, "user_accounts__3.db")
 
 	table, offset := fileInfofromFilename(filename)
-	if table != "user_accounts" {
-		t.Errorf("unexpected table: %s", table)
-	}
-	if offset != 3 {
-		t.Errorf("unexpected offset: %d", offset)
-	}
+	testutil.MustEqual(t, table, "user_accounts")
+	testutil.MustEqual(t, offset, 3)
 }
