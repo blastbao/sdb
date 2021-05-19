@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/dty1er/sdb/btree"
 	"github.com/dty1er/sdb/engine/ssdb"
@@ -112,26 +113,50 @@ func (dc *DebugCommand) showPage() error {
 	if dc.pageDescriptorID == "" {
 		return fmt.Errorf("pageDescriptor ID must be specified")
 	}
-	filename := path.Join("./db", fmt.Sprintf("%s.db", dc.pageDescriptorID))
-	if _, err := os.Stat(filename); err != nil {
+
+	table := strings.Split(dc.pageDescriptorID, "__")[0]
+
+	// first, read page directory to know how many pages are in the file
+	pdFilename := path.Join("./db", "__page_directory.db")
+	if _, err := os.Stat(pdFilename); err != nil {
+		return fmt.Errorf("page directory file does not exist")
+	}
+
+	file, err := os.OpenFile(pdFilename, os.O_RDONLY, 0755)
+	if err != nil {
+		return fmt.Errorf("open file %s, %w", pdFilename, err)
+	}
+
+	var pd ssdb.PageDirectory
+	if err := json.NewDecoder(file).Decode(&pd); err != nil {
+		return fmt.Errorf("deserialize json file %s, %w", pdFilename, err)
+	}
+
+	// then, read page file
+	pgFilename := path.Join("./db", fmt.Sprintf("%s.db", dc.pageDescriptorID))
+	if _, err := os.Stat(pgFilename); err != nil {
 		return fmt.Errorf("page file does not exist")
 	}
 
-	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
+	pgFile, err := os.OpenFile(pgFilename, os.O_RDONLY, 0755)
 	if err != nil {
-		return fmt.Errorf("open file %s, %w", filename, err)
+		return fmt.Errorf("open file %s, %w", pgFilename, err)
 	}
 
-	bs := [ssdb.PageSize]byte{}
-	_, err = file.Read(bs[:])
-	if err != nil {
-		return fmt.Errorf("read file %s, %w", filename, err)
+	pagesCount := len(pd.GetPageIDs(table))
+
+	for i := 0; i < pagesCount; i++ {
+		bs := [ssdb.PageSize]byte{}
+		_, err = pgFile.ReadAt(bs[:], int64(i*ssdb.PageSize))
+		if err != nil {
+			return fmt.Errorf("read file %s, %w", pgFilename, err)
+		}
+
+		p := ssdb.NewPage(bs)
+
+		fmt.Printf("=======Debug: Page (%s)\n", pgFilename)
+		fmt.Println(p)
+		fmt.Printf("=======\n")
 	}
-
-	p := ssdb.NewPage(bs)
-
-	fmt.Printf("=======Debug: Index (%s)\n", filename)
-	fmt.Println(p)
-	fmt.Printf("=======\n")
 	return nil
 }
