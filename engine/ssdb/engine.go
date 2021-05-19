@@ -1,6 +1,8 @@
 package ssdb
 
 import (
+	"fmt"
+
 	"github.com/dty1er/sdb/btree"
 )
 
@@ -95,14 +97,46 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 	}
 
 	for {
+		// first, make sure the page is on the buffer pool
+		pageFound := e.bufferPool.FindPage(table, pageID)
+		if !pageFound {
+			// if not found, put the page on the cache
+			loc, err := e.pageDirectory.GetPageLocation(table, pageID)
+			if err != nil {
+				// this must not happen
+				panic(fmt.Sprintf("page is not found in the page directory: %s", err))
+			}
+			p, err := e.diskManager.GetPage(loc)
+			if err != nil {
+				return err
+			}
+
+			evicted := e.bufferPool.InsertPage(table, p)
+			if evicted != nil {
+				loc, err := e.pageDirectory.GetPageLocation(table, evicted.GetID())
+				if err != nil {
+					return err
+				}
+				if err = e.diskManager.PersistPage(loc, evicted); err != nil {
+					return err
+				}
+			}
+		}
+
+		// try to append the tuple on the page
 		appended := e.bufferPool.AppendTuple(table, pageID, t)
 		if appended {
+			// if append succeeds, finish
 			break
 		}
+
+		// if fail, init new page then try to use it
 		page := InitPage(uint32(pageID) + 1)
 		if err := e.InsertPage(table, page); err != nil {
 			return err
 		}
+
+		pageID = page.GetID()
 	}
 
 	return nil

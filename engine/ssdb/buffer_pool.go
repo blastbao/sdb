@@ -35,6 +35,12 @@ func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
 	return string(hash[:])
 }
 
+// FindPage returns if the buffer pool has the page.
+func (bp *BufferPool) FindPage(tableName string, pageID PageID) bool {
+	key := bp.cacheKey(tableName, pageID)
+	return bp.frames.Get(key) != nil
+}
+
 // InsertPage inserts page in the cache.
 // When non-nil page is returned, it must be persisted on the disk.
 func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
