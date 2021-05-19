@@ -338,3 +338,9 @@ func Deserialize(bs []byte) (*BTree, error) {
 	bt.latch = sync.RWMutex{}
 	return &bt, nil
 }
+
+// RegisterSerializationTarget registers the target value to the serialization.
+// This must be called before serializint the btree which contains the value type element.
+func RegisterSerializationTarget(value interface{}) {
+	gob.Register(value)
+}
