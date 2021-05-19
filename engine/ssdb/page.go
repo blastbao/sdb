@@ -2,6 +2,7 @@ package ssdb
 
 import (
 	"fmt"
+	"strings"
 )
 
 type PageID uint32
@@ -116,4 +117,28 @@ func (p *Page) AppendTuple(t *Tuple) error {
 
 func (p *Page) GetID() PageID {
 	return p.decodeHeader().id
+}
+
+func (p *Page) String() string {
+	header := p.decodeHeader()
+
+	sb := strings.Builder{}
+	sb.WriteString("Page{\n")
+
+	sb.WriteString("  Header{\n")
+	sb.WriteString(fmt.Sprintf("    ID: %v,\n", uint32(header.id)))
+	sb.WriteString(fmt.Sprintf("    tuplesCount: %v,\n", header.tuplesCount))
+	for _, slot := range header.slots {
+		sb.WriteString(fmt.Sprintf("    {offset: %v, length: %v},\n", slot.offset, slot.length))
+	}
+	sb.WriteString("  },\n")
+
+	sb.WriteString("  Tuples{\n")
+	for _, slot := range header.slots {
+		sb.WriteString(fmt.Sprintf("%v\n", DeserializeTuple(p.bs[slot.offset:slot.offset+slot.length])))
+	}
+	sb.WriteString("  },\n")
+	sb.WriteString("}\n")
+
+	return sb.String()
 }

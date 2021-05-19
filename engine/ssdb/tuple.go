@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // Tuple represents a row in a table. The size varies.
@@ -103,4 +104,23 @@ func DeserializeTuple(bs []byte) *Tuple {
 	}
 
 	return t
+}
+
+func (t *Tuple) String() string {
+	sb := strings.Builder{}
+	// put spaces at the head to print as an element of page. See page.String()
+	sb.WriteString("    Tuple{\n")
+	for _, d := range t.Data {
+		switch d.Typ {
+		case Int32:
+			sb.WriteString(fmt.Sprintf("      (int32) %v,\n", d.Int32Val))
+		case Int64:
+			sb.WriteString(fmt.Sprintf("      (int64) %v,\n", d.Int64Val))
+		case Byte64:
+			sb.WriteString(fmt.Sprintf("      (byte64) %v,\n", string(d.Byte64Val[:])))
+		}
+	}
+	sb.WriteString("    },")
+
+	return sb.String()
 }
