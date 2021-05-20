@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dty1er/sdb/btree"
+	"github.com/dty1er/sdb/config"
 )
 
 func init() {
@@ -18,20 +19,14 @@ type Engine struct {
 	diskManager   *DiskManager
 }
 
-// config is the configuration of ssdb storage engine.
-type config struct {
-	BufferPoolEntryCount int
-	DBFilesDirectory     string
-}
-
 func New() (*Engine, error) {
-	// TODO: load config file
-	config := &config{
-		BufferPoolEntryCount: 1000,
-		DBFilesDirectory:     "./db/",
+	// TODO: this should be passed as arg
+	conf, err := config.Process()
+	if err != nil {
+		return nil, err
 	}
 
-	diskManager := NewDiskManager(config.DBFilesDirectory)
+	diskManager := NewDiskManager(conf.Server.DBFilesDirectory)
 
 	indices, err := diskManager.LoadIndex()
 	if err != nil {
@@ -46,7 +41,7 @@ func New() (*Engine, error) {
 		return nil, err
 	}
 
-	bufferPool := NewBufferPool(config.BufferPoolEntryCount, indices)
+	bufferPool := NewBufferPool(conf.Server.BufferPoolEntryCount, indices)
 
 	return &Engine{
 		bufferPool:    bufferPool,

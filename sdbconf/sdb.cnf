@@ -1,0 +1,5 @@
+# sdb test configuration
+
+[server]
+buffer_pool_entry_count = 1000
+db_files_directory = ./db/
