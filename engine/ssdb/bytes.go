@@ -20,3 +20,7 @@ func putUint16OnBytes(bs []byte, v uint16) {
 func putUint32OnBytes(bs []byte, v uint32) {
 	byteOrder.PutUint32(bs, v)
 }
+
+func putUint64OnBytes(bs []byte, v uint64) {
+	byteOrder.PutUint64(bs, v)
+}

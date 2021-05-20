@@ -36,6 +36,8 @@ func NewTuple(values []interface{}) *Tuple {
 		switch actual := v.(type) {
 		case int32:
 			t.Data[i] = &TupleData{Typ: Int32, Int32Val: actual}
+		case int64:
+			t.Data[i] = &TupleData{Typ: Int64, Int64Val: actual}
 		case [64]byte:
 			t.Data[i] = &TupleData{Typ: Byte64, Byte64Val: actual}
 		default:
@@ -66,6 +68,11 @@ func SerializeTuple(t *Tuple) []byte {
 			result = make([]byte, 4+4)
 			val := make([]byte, 4)
 			putUint32OnBytes(val, uint32(d.Int32Val))
+			copy(result[4:], val)
+		case Int64:
+			result = make([]byte, 4+8)
+			val := make([]byte, 8)
+			putUint64OnBytes(val, uint64(d.Int64Val))
 			copy(result[4:], val)
 		case Byte64:
 			result = make([]byte, 4+64)
