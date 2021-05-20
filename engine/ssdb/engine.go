@@ -50,13 +50,6 @@ func New() (*Engine, error) {
 	}, nil
 }
 
-type KeyType uint8
-
-const (
-	Int KeyType = iota + 1
-	String
-)
-
 // CreateIndex initializes the btree index.
 func (e *Engine) CreateIndex(idxName string) {
 	bt := btree.New()
