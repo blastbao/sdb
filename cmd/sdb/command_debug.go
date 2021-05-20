@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/dty1er/sdb/btree"
-	"github.com/dty1er/sdb/engine/ssdb"
+	"github.com/dty1er/sdb/engine"
 )
 
 type DebugCommand struct {
@@ -68,7 +68,7 @@ func (dc *DebugCommand) showPageDirectory() error {
 		return fmt.Errorf("open file %s, %w", filename, err)
 	}
 
-	var pd ssdb.PageDirectory
+	var pd engine.PageDirectory
 	if err := json.NewDecoder(file).Decode(&pd); err != nil {
 		return fmt.Errorf("deserialize json file %s, %w", filename, err)
 	}
@@ -127,7 +127,7 @@ func (dc *DebugCommand) showPage() error {
 		return fmt.Errorf("open file %s, %w", pdFilename, err)
 	}
 
-	var pd ssdb.PageDirectory
+	var pd engine.PageDirectory
 	if err := json.NewDecoder(file).Decode(&pd); err != nil {
 		return fmt.Errorf("deserialize json file %s, %w", pdFilename, err)
 	}
@@ -146,13 +146,13 @@ func (dc *DebugCommand) showPage() error {
 	pagesCount := len(pd.GetPageIDs(table))
 
 	for i := 0; i < pagesCount; i++ {
-		bs := [ssdb.PageSize]byte{}
-		_, err = pgFile.ReadAt(bs[:], int64(i*ssdb.PageSize))
+		bs := [engine.PageSize]byte{}
+		_, err = pgFile.ReadAt(bs[:], int64(i*engine.PageSize))
 		if err != nil {
 			return fmt.Errorf("read file %s, %w", pgFilename, err)
 		}
 
-		p := ssdb.NewPage(bs)
+		p := engine.NewPage(bs)
 
 		fmt.Printf("=======Debug: Page (%s)\n", pgFilename)
 		fmt.Println(p)
