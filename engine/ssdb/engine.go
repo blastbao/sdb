@@ -2,6 +2,7 @@ package ssdb
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/dty1er/sdb/btree"
 	"github.com/dty1er/sdb/config"
@@ -72,7 +73,7 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 	if len(pageIDs) == 0 {
 		// First record for the table. Insert a page
 		page := InitPage(1)
-		e.InsertPage(table, page)
+		e.insertPage(table, page)
 		pageID = PageID(1)
 	} else {
 		// use the last page
@@ -115,7 +116,7 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 
 		// if fail, init new page then try to use it
 		page := InitPage(uint32(pageID) + 1)
-		if err := e.InsertPage(table, page); err != nil {
+		if err := e.insertPage(table, page); err != nil {
 			return err
 		}
 
@@ -125,8 +126,42 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 	return nil
 }
 
-// InsertPage inserts a given page in pageDirectory and buffer pool.
-func (e *Engine) InsertPage(table string, page *Page) error {
+func (e *Engine) ReadIndex(idxName string) *btree.BTree {
+	// FUTURE WORK: it assumes every index is cached in buffer pool, but
+	// it makes sdb require a lot of memory. Some of them should be cached but
+	// some should be on disk.
+	return e.bufferPool.readIndex(idxName)
+}
+
+func (e *Engine) ReadTable(table string) ([]*Tuple, error) {
+	tuples := []*Tuple{}
+	pageIDs := e.pageDirectory.GetPageIDs(table)
+	for _, pageID := range pageIDs {
+		page := e.bufferPool.GetPage(table, pageID)
+		if page == nil {
+			loc, err := e.pageDirectory.GetPageLocation(table, pageID)
+			if err != nil {
+				panic(err) // this must not happen
+			}
+			p, err := e.diskManager.GetPage(loc)
+			if err != nil {
+				return nil, err
+			}
+			page = p
+		}
+
+		ts := page.GetTuples()
+		tuples = append(tuples, ts...)
+	}
+
+	// default sort by key
+	sort.Slice(tuples, func(i, j int) bool { return tuples[i].Less(tuples[j]) })
+
+	return tuples, nil
+}
+
+// insertPage inserts a given page in pageDirectory and buffer pool.
+func (e *Engine) insertPage(table string, page *Page) error {
 	e.pageDirectory.RegisterPage(table, page)
 	evicted := e.bufferPool.InsertPage(table, page)
 	if evicted != nil {

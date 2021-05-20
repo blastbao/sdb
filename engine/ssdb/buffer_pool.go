@@ -35,10 +35,24 @@ func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
 	return string(hash[:])
 }
 
+func (bp *BufferPool) readIndex(idxName string) *btree.BTree {
+	return bp.indices[idxName]
+}
+
 // FindPage returns if the buffer pool has the page.
 func (bp *BufferPool) FindPage(tableName string, pageID PageID) bool {
 	key := bp.cacheKey(tableName, pageID)
 	return bp.frames.Get(key) != nil
+}
+
+func (bp *BufferPool) GetPage(tableName string, pageID PageID) *Page {
+	key := bp.cacheKey(tableName, pageID)
+	elem := bp.frames.Get(key)
+	if elem == nil {
+		return nil
+	}
+
+	return elem.(*pageDescriptor).page
 }
 
 // InsertPage inserts page in the cache.

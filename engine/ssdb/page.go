@@ -88,6 +88,17 @@ func (p *Page) decodeHeader() pageHeader {
 	return h
 }
 
+func (p *Page) GetTuples() []*Tuple {
+	header := p.decodeHeader()
+	tuples := make([]*Tuple, header.tuplesCount)
+	for i, slot := range header.slots {
+		bs := p.bs[slot.offset : slot.offset+slot.length]
+		tuples[i] = DeserializeTuple(bs[:])
+	}
+
+	return tuples
+}
+
 func (p *Page) AppendTuple(t *Tuple) error {
 	tb := SerializeTuple(t)
 
