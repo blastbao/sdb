@@ -31,6 +31,7 @@ type Config struct {
 type Server struct {
 	BufferPoolEntryCount int
 	DBFilesDirectory     string
+	Port                 int
 }
 
 type Client struct{}
@@ -106,6 +107,13 @@ func readServerConfig(line string, conf *Config) error {
 
 	case isLine(line, "db_files_directory"):
 		conf.Server.DBFilesDirectory = readStringVal(line, "db_files_directory")
+
+	case isLine(line, "port"):
+		v, err := readIntVal(line, "port")
+		if err != nil {
+			return err
+		}
+		conf.Server.Port = v
 	}
 
 	return nil
