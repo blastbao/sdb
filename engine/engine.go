@@ -20,14 +20,8 @@ type Engine struct {
 	diskManager   *DiskManager
 }
 
-func New() (*Engine, error) {
-	// TODO: this should be passed as arg
-	conf, err := config.Process()
-	if err != nil {
-		return nil, err
-	}
-
-	diskManager := NewDiskManager(conf.Server.DBFilesDirectory)
+func New(conf *config.Server) (*Engine, error) {
+	diskManager := NewDiskManager(conf.DBFilesDirectory)
 
 	indices, err := diskManager.LoadIndex()
 	if err != nil {
@@ -42,7 +36,7 @@ func New() (*Engine, error) {
 		return nil, err
 	}
 
-	bufferPool := NewBufferPool(conf.Server.BufferPoolEntryCount, indices)
+	bufferPool := NewBufferPool(conf.BufferPoolEntryCount, indices)
 
 	return &Engine{
 		bufferPool:    bufferPool,
