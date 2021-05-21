@@ -49,7 +49,7 @@ func TestBufferPool_AppendTuple(t *testing.T) {
 	testutil.MustEqual(t, appended, false)
 
 	// make sure true is responded when the page is found on cache
-	dummyTuple := &Tuple{Data: []*TupleData{{Typ: Int32, Int32Val: 96}}}
+	dummyTuple := NewTuple([]interface{}{int64(96)}, 0)
 
 	page1 := InitPage(1)
 	bp.frames.Set(bp.cacheKey(table, 1), &pageDescriptor{table: table, page: page1, dirty: false})

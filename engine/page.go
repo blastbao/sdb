@@ -103,7 +103,8 @@ func (p *Page) AppendTuple(t *Tuple) error {
 	tb := SerializeTuple(t)
 
 	header := p.decodeHeader()
-	headerLength := 4 + 2 + len(header.slots)*4
+	// type + length + is_key + spare + slots
+	headerLength := 2 + 2 + 1 + 3 + len(header.slots)*4
 
 	last := uint16(PageSize)
 	if header.tuplesCount != 0 {

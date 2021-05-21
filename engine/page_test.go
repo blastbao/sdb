@@ -44,30 +44,10 @@ func TestInitPage(t *testing.T) {
 
 func TestPage_AppendTuple(t *testing.T) {
 	tuples := []*Tuple{
-		{
-			Data: []*TupleData{
-				{Typ: Int32, Int32Val: 96},
-				{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
-			},
-		},
-		{
-			Data: []*TupleData{
-				{Typ: Int32, Int32Val: 97},
-				{Typ: Byte64, Byte64Val: [64]byte{'d', 'e', 'f'}},
-			},
-		},
-		{
-			Data: []*TupleData{
-				{Typ: Byte64, Byte64Val: [64]byte{'g', 'h', 'i', 'j', 'k'}},
-				{Typ: Int32, Int32Val: 98},
-			},
-		},
-		{
-			Data: []*TupleData{
-				{Typ: Byte64, Byte64Val: [64]byte{'l', 'm', 'n', 'o', 'p'}},
-				{Typ: Int32, Int32Val: 99},
-			},
-		},
+		NewTuple([]interface{}{int64(96), []byte{'a', 'b', 'c'}}, 0),
+		NewTuple([]interface{}{int64(97), []byte{'d', 'e', 'f'}}, 0),
+		NewTuple([]interface{}{[]byte{'g', 'h', 'i', 'j', 'k'}, int64(96)}, 0),
+		NewTuple([]interface{}{[]byte{'l', 'm', 'n', 'o', 'p'}, int64(96)}, 0),
 	}
 	page := InitPage(42)
 
@@ -88,12 +68,7 @@ func TestPage_AppendTuple(t *testing.T) {
 	}
 
 	// make sure err is responded when the page has no space
-	tuple := &Tuple{
-		Data: []*TupleData{
-			{Typ: Int32, Int32Val: 96},
-			{Typ: Byte64, Byte64Val: [64]byte{'a', 'b', 'c'}},
-		},
-	}
+	tuple := NewTuple([]interface{}{int64(96), []byte{'a', 'b', 'c'}}, 0)
 
 	tupleSize := len(SerializeTuple(tuple))
 	// a page can contains $max tuples
