@@ -2,43 +2,46 @@ package query
 
 import "strings"
 
-type TokenKind int
+type TokenKind string
 
 const (
-	EOF TokenKind = iota + 1
+	EOF TokenKind = "EOF"
 
-	SELECT
-	FROM
-	WHERE
-	AND
+	SELECT = "SELECT"
+	FROM   = "FROM"
+	WHERE  = "WHERE"
+	AND    = "AND"
 
-	CREATE
-	TABLE
+	CREATE = "CREATE"
+	TABLE  = "TABLE"
 
-	INSERT
-	INTO
-	VALUES
+	INSERT = "INSERT"
+	INTO   = "INTO"
+	VALUES = "VALUES"
 
-	PRIMARY
-	KEY
+	PRIMARY = "PRIMARY"
+	KEY     = "KEY"
 
-	BOOL
-	INT64
-	FLOAT64
-	BYTES
-	STRING
-	TIMESTAMP
+	BOOL      = "BOOL"
+	INT64     = "INT64"
+	FLOAT64   = "FLOAT64"
+	BYTES     = "BYTES"
+	STRING    = "STRING"
+	TIMESTAMP = "TIMESTAMP"
 
-	STRING_VAL        // e.g. user_id
-	QUOTED_STRING_VAL // e.g. "sdb is a simple database"
-	NUMBER_VAL        // e.g. 123, 3.14
+	STRING_VAL = "STRING_VAL"
+	NUMBER_VAL = "NUMBER_VAL"
 
-	LPAREN // (
-	RPAREN // )
-	COMMA
-	EQ
-	ASTERISK
+	LPAREN   = "LPAREN" // (
+	RPAREN   = "RPAREN" // )
+	COMMA    = "COMMA"
+	EQ       = "EQ"
+	ASTERISK = "ASTERISK"
 )
+
+func (tk TokenKind) String() string {
+	return string(tk)
+}
 
 type Token struct {
 	Kind TokenKind
@@ -199,7 +202,7 @@ func (t *Tokenizer) Tokenize() []*Token {
 
 		case t.match(`"`):
 			s := t.scanQuotedStringVal()
-			tokens = append(tokens, &Token{Kind: QUOTED_STRING_VAL, Val: s})
+			tokens = append(tokens, &Token{Kind: STRING_VAL, Val: s})
 		case t.isNumber():
 			s := t.scanNumber()
 			tokens = append(tokens, &Token{Kind: NUMBER_VAL, Val: s})
