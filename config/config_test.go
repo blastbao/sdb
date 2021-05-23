@@ -26,7 +26,7 @@ db_files_directory = ./test/
 	testutil.MustBeNil(t, err)
 
 	testutil.MustEqual(t, c, &Config{
-		Server: &Server{BufferPoolEntryCount: 500, DBFilesDirectory: "./test/"},
+		Server: &Server{BufferPoolEntryCount: 500, DBFilesDirectory: "./test/", Port: 5525},
 		Client: &Client{},
 	})
 }

@@ -19,6 +19,7 @@ var defaultConfig = &Config{
 	Server: &Server{
 		BufferPoolEntryCount: 1000,
 		DBFilesDirectory:     "./db/",
+		Port:                 5525,
 	},
 	Client: &Client{},
 }
