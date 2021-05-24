@@ -188,7 +188,7 @@ func (p *Parser) Parse() (stmt *Statement, err error) {
 	case p.consume(INSERT):
 		return p.parseInsertStmt(), nil
 	// case p.consume(SELECT):
-	// 	return p.parseSelectStmt()
+	// 	return p.parseSelectStmt(), nil
 	default:
 		return nil, fmt.Errorf("unexpected leading token")
 	}

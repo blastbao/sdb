@@ -16,9 +16,9 @@ type CreateTableStatement struct {
 }
 
 type SelectStatement struct {
-	Columns    []string
-	Table      []string
-	Conditions []Expression
+	Columns []string
+	Table   []string
+	// Conditions []Expression
 }
 
 type InsertStatement struct {
