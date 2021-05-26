@@ -104,7 +104,7 @@ func NewTuple(values []interface{}, keyIndex int) *Tuple {
 		case time.Time:
 			t.Data[i] = &TupleData{Typ: Timestamp, Length: 8, TimestampVal: actual.UnixNano()}
 		default:
-			fmt.Fprintf(os.Stdout, "[WARN] unexpected type in init tuple")
+			fmt.Fprintf(os.Stdout, "[WARN] unexpected type in init tuple\n")
 		}
 
 		if i == keyIndex {
