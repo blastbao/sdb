@@ -24,6 +24,39 @@ func (t *Table) Has(col, typ string) bool {
 
 type Catalog struct {
 	Tables map[string]*Table
+	latch  sync.RWMutex
+}
+
+func NewCatalog() *Catalog {
+	return &Catalog{
+		Tables: map[string]*Table{},
+	}
+}
+
+func (c *Catalog) AddTable(table string, columns, types []string, pkey string) error {
+	c.latch.Lock()
+	defer c.latch.Unlock()
+
+	if c.FindTable(table) {
+		return fmt.Errorf("table %s already exists", table)
+	}
+
+	tps := make([]Type, len(types))
+	for i, typ := range types {
+		tps[i] = TypeFromString(typ)
+	}
+
+	idx := 0
+	for i, column := range columns {
+		if pkey == column {
+			idx = i
+		}
+	}
+
+	t := &Table{Columns: columns, Types: tps, PrimaryKeyIndex: idx}
+	c.Tables[table] = t
+
+	return nil
 }
 
 func (c *Catalog) FindTable(table string) bool {

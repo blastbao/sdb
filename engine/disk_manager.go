@@ -157,3 +157,42 @@ func (dm *DiskManager) PersistPageDirectory(pd *PageDirectory) error {
 
 	return nil
 }
+
+func (dm *DiskManager) LoadCatalog() (*Catalog, error) {
+	filename := path.Join(dm.directory, "__catalog.db")
+	if _, err := os.Stat(filename); err != nil {
+		return NewCatalog(), nil // when run database for the first time
+	}
+
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
+	if err != nil {
+		return nil, fmt.Errorf("open file %s, %w", filename, err)
+	}
+
+	var c Catalog
+	if err := json.NewDecoder(file).Decode(&c); err != nil {
+		return nil, fmt.Errorf("deserialize catalog file %s, %w", filename, err)
+	}
+
+	return &c, nil
+}
+
+func (dm *DiskManager) PersistCatalog(c *Catalog) error {
+	buff := new(bytes.Buffer)
+	if err := json.NewEncoder(buff).Encode(&c); err != nil {
+		return fmt.Errorf("serialize page directory: %w", err)
+	}
+
+	filename := path.Join(dm.directory, "__catalog.db")
+	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return fmt.Errorf("open file %s, %w", filename, err)
+	}
+	defer file.Close()
+
+	if _, err = file.Write(buff.Bytes()); err != nil {
+		return fmt.Errorf("write catalog on the file %s: %w", filename, err)
+	}
+
+	return nil
+}

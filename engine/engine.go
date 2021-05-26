@@ -18,6 +18,7 @@ type Engine struct {
 	bufferPool    *BufferPool
 	pageDirectory *PageDirectory
 	diskManager   *DiskManager
+	catalog       *Catalog
 }
 
 func New(conf *config.Server) (*Engine, error) {
@@ -36,13 +37,28 @@ func New(conf *config.Server) (*Engine, error) {
 		return nil, err
 	}
 
+	catalog, err := diskManager.LoadCatalog()
+	if err != nil {
+		return nil, err
+	}
+
 	bufferPool := NewBufferPool(conf.BufferPoolEntryCount, indices)
 
 	return &Engine{
 		bufferPool:    bufferPool,
 		pageDirectory: pageDirectory,
 		diskManager:   diskManager,
+		catalog:       catalog,
 	}, nil
+}
+
+func (e *Engine) AddTable(table string, columns, types []string, pkey string) error {
+	return e.catalog.AddTable(table, columns, types, pkey)
+}
+
+func (c *Engine) FindTable(table string) bool {
+	_, ok := c.catalog.Tables[table]
+	return ok
 }
 
 // CreateIndex initializes the btree index.
@@ -198,6 +214,10 @@ func (e *Engine) Shutdown() error {
 
 	// persist pageDirectory
 	if err := e.diskManager.PersistPageDirectory(e.pageDirectory); err != nil {
+		return err
+	}
+
+	if err := e.diskManager.PersistCatalog(e.catalog); err != nil {
 		return err
 	}
 
