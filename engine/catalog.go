@@ -1,9 +1,15 @@
 package engine
 
+import (
+	"fmt"
+	"sync"
+)
+
 // TODO: (de)serialize and persistent feature
 type Table struct {
-	Columns []string
-	Types   []Type
+	Columns         []string
+	Types           []Type
+	PrimaryKeyIndex int
 }
 
 func (t *Table) Has(col, typ string) bool {
