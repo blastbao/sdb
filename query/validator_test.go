@@ -11,9 +11,9 @@ import (
 func TestValidator_Validate_CreateTable(t *testing.T) {
 	catalog := &engine.Catalog{
 		Tables: map[string]*engine.Table{
-			"users": {
-				Columns: []string{},
-				Types:   []engine.Type{},
+			"items": {
+				Columns: []string{"id", "name"},
+				Types:   []engine.Type{engine.Int64, engine.String},
 			},
 		},
 	}
@@ -23,7 +23,15 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 	}
 	tooManyTypes := []string{}
 	for i := 1; i <= 101; i++ {
-		tooManyColumns = append(tooManyTypes, "INT64")
+		tooManyTypes = append(tooManyTypes, "INT64")
+	}
+	maxColumns := []string{}
+	for i := 1; i <= 100; i++ {
+		maxColumns = append(maxColumns, fmt.Sprintf("id_%d", i))
+	}
+	maxTypes := []string{}
+	for i := 1; i <= 100; i++ {
+		maxTypes = append(maxTypes, "INT64")
 	}
 	tests := []struct {
 		name      string
@@ -45,7 +53,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 		{
 			name: "table is not found",
 			stmt: &CreateTableStatement{
-				Table:         "xxx",
+				Table:         "items",
 				Columns:       []string{"id", "name", "verified", "registered"},
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "id",
@@ -76,6 +84,17 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 			wantError: true,
 		},
 		{
+			name: "pkey is not in columns",
+			stmt: &CreateTableStatement{
+				Table:         "users",
+				Columns:       []string{"id", "name", "verified", "registered"},
+				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
+				PrimaryKeyCol: "xxx",
+			},
+			catalog:   catalog,
+			wantError: true,
+		},
+		{
 			name: "invalid col name",
 			stmt: &CreateTableStatement{
 				Table:         "users",
@@ -96,6 +115,17 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 			},
 			catalog:   catalog,
 			wantError: true,
+		},
+		{
+			name: "ok",
+			stmt: &CreateTableStatement{
+				Table:         "users",
+				Columns:       maxColumns,
+				Types:         maxTypes,
+				PrimaryKeyCol: "id_1",
+			},
+			catalog:   catalog,
+			wantError: false,
 		},
 	}
 	for _, test := range tests {

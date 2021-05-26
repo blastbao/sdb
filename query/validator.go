@@ -60,16 +60,24 @@ func (v *Validator) validateCreateTableStmt() error {
 		return fmt.Errorf("at least one primary key is required")
 	}
 
-	if !v.catalog.FindTable(stmt.Table) {
-		return fmt.Errorf("table %s already exists", stmt.Table)
-	}
-
 	if len(stmt.Columns) != len(stmt.Types) {
 		return fmt.Errorf("query is invalid")
 	}
 
 	if 100 < len(stmt.Columns) {
 		return fmt.Errorf("too much columns")
+	}
+
+	pKeyInCol := false
+	for _, columnName := range stmt.Columns {
+		if columnName == stmt.PrimaryKeyCol {
+			pKeyInCol = true
+			break
+		}
+	}
+
+	if !pKeyInCol {
+		return fmt.Errorf("primary key %s is must be in column", stmt.PrimaryKeyCol)
 	}
 
 	for _, columnName := range stmt.Columns {
@@ -82,6 +90,10 @@ func (v *Validator) validateCreateTableStmt() error {
 		if !validType(typ) {
 			return fmt.Errorf("type %s is not allowed", typ)
 		}
+	}
+
+	if v.catalog.FindTable(stmt.Table) {
+		return fmt.Errorf("table %s already exists", stmt.Table)
 	}
 
 	return nil
