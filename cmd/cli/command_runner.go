@@ -1,11 +1,10 @@
-package main
+package cli
 
 import (
 	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -19,7 +18,7 @@ type Runner interface {
 	Run() error
 }
 
-func run(args []string) error {
+func Run(args []string) error {
 	cmds := []Runner{
 		NewDebugCommand(),
 		NewServerCommand(),
@@ -64,35 +63,45 @@ func runCli() error {
 			query += " " + t
 		}
 
-		return execQuery(query)
+		resp, err := ExecQuery(query)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			continue
+		}
+
+		if resp.Result != "OK" {
+			fmt.Fprintf(os.Stdout, "execution failed: %s\n", resp.Error.Message)
+			continue
+		}
+
+		fmt.Fprintf(os.Stdout, "%+v\n", resp.RS)
 	}
 }
 
-func execQuery(query string) error {
+func ExecQuery(query string) (*sdb.Response, error) {
 	r := sdb.Request{Query: query}
 	reqB, err := json.Marshal(&r)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequest("POST", "http://localhost:5525/execute", bytes.NewBuffer(reqB))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 
-	b, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
+	var sdbResp sdb.Response
+	if err := json.NewDecoder(resp.Body).Decode(&sdbResp); err != nil {
+		return nil, err
 	}
 
-	fmt.Println(string(b))
-	return nil
+	return &sdbResp, nil
 }

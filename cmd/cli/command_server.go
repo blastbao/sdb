@@ -1,8 +1,9 @@
-package main
+package cli
 
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -29,7 +30,7 @@ func (sc *ServerCommand) Init(args []string) error {
 func (sc *ServerCommand) Run() error {
 	ctx := context.Background()
 
-	server, err := sdb.New()
+	db, err := sdb.New()
 	if err != nil {
 		return err
 	}
@@ -39,10 +40,15 @@ func (sc *ServerCommand) Run() error {
 
 	go func() {
 		<-ctx.Done()
-		server.Shutdown(ctx)
+		if err := db.Shutdown(ctx); err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			return
+		}
+
+		fmt.Fprintf(os.Stdout, "sdb server successfully stopped\n")
 	}()
 
-	err = server.Run()
+	err = db.Run()
 	if err == http.ErrServerClosed {
 		err = nil
 	}
