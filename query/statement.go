@@ -6,6 +6,8 @@ const (
 	CREATE_TABLE_STMT StmtType = iota + 1
 	SELECT_STMT
 	INSERT_STMT
+	UPDATE_STMT
+	DELETE_STMT
 )
 
 type CreateTableStatement struct {

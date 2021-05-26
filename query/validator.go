@@ -8,12 +8,12 @@ import (
 )
 
 type Validator struct {
-	stmt    *Statement
-	catalog *engine.Catalog
+	stmt   *Statement
+	engine *engine.Engine
 }
 
-func NewValidator(stmt *Statement, catalog *engine.Catalog) *Validator {
-	return &Validator{stmt: stmt, catalog: catalog}
+func NewValidator(stmt *Statement, engine *engine.Engine) *Validator {
+	return &Validator{stmt: stmt, engine: engine}
 }
 
 func validColName(name string) bool {
@@ -92,7 +92,7 @@ func (v *Validator) validateCreateTableStmt() error {
 		}
 	}
 
-	if v.catalog.FindTable(stmt.Table) {
+	if v.engine.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s already exists", stmt.Table)
 	}
 

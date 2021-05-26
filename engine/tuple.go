@@ -65,6 +65,25 @@ func (t Type) String() string {
 	return ""
 }
 
+func TypeFromString(s string) Type {
+	switch s {
+	case "Bool":
+		return Bool
+	case "Int64":
+		return Int64
+	case "Float64":
+		return Float64
+	case "Bytes":
+		return Bytes
+	case "String":
+		return String
+	case "Timestamp":
+		return Timestamp
+	}
+
+	return 0
+}
+
 // NewTuple returns a tuple which represents a row in a table.
 // values are supposed to be the multiple column value of a column.
 func NewTuple(values []interface{}, keyIndex int) *Tuple {
