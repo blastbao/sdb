@@ -1,4 +1,4 @@
-package query
+package parser
 
 import (
 	"fmt"
@@ -52,7 +52,6 @@ func validType(typ string) bool {
 	return false
 }
 
-// TODO: validate types and columns are valid for the table
 func (v *Validator) validateCreateTableStmt() error {
 	stmt := v.stmt.CreateTable
 
@@ -99,10 +98,24 @@ func (v *Validator) validateCreateTableStmt() error {
 	return nil
 }
 
+func (v *Validator) validateInsertStmt() error {
+	stmt := v.stmt.Insert
+
+	if !v.engine.FindTable(stmt.Table) {
+		return fmt.Errorf("table %s does not exist", stmt.Table)
+	}
+
+	// TODO: make sure the given record matches the table scheme
+
+	return nil
+}
+
 func (v *Validator) Validate() error {
 	switch v.stmt.Typ {
 	case CREATE_TABLE_STMT:
 		return v.validateCreateTableStmt()
+	case INSERT_STMT:
+		return v.validateInsertStmt()
 	default:
 		return fmt.Errorf("unexpected statement type")
 	}
