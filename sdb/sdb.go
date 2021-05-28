@@ -3,7 +3,8 @@ package sdb
 import (
 	"fmt"
 
-	"github.com/dty1er/sdb/query"
+	"github.com/dty1er/sdb/executor"
+	"github.com/dty1er/sdb/parser"
 )
 
 type Request struct {
@@ -28,11 +29,12 @@ type ResultSet struct {
 }
 
 func (sdb *SDB) ExecQuery(req *Request) *Response {
-	tokenizer := query.NewTokenizer(req.Query)
+	// TODO: encapsulate tokenize, parse, and validate into parser
+	tokenizer := parser.NewTokenizer(req.Query)
 	tokens := tokenizer.Tokenize()
 
-	parser := query.NewParser(tokens)
-	stmt, err := parser.Parse()
+	p := parser.NewParser(tokens)
+	stmt, err := p.Parse()
 	if err != nil {
 		return &Response{
 			Result: "NG",
@@ -40,7 +42,7 @@ func (sdb *SDB) ExecQuery(req *Request) *Response {
 		}
 	}
 
-	validator := query.NewValidator(stmt, sdb.engine)
+	validator := parser.NewValidator(stmt, sdb.engine)
 	if err := validator.Validate(); err != nil {
 		return &Response{
 			Result: "NG",
@@ -48,7 +50,9 @@ func (sdb *SDB) ExecQuery(req *Request) *Response {
 		}
 	}
 
-	executor := query.NewExecutor(sdb.engine)
+	// TODO: make planner pkg and make plan, then pass it to executor
+
+	executor := executor.NewExecutor(sdb.engine)
 	result, err := executor.Execute(stmt)
 	if err != nil {
 		return &Response{
@@ -65,11 +69,11 @@ func (sdb *SDB) ExecQuery(req *Request) *Response {
 	}
 
 	switch stmt.Typ {
-	case query.SELECT_STMT:
+	case parser.SELECT_STMT:
 		successResp.RS.Columns = result.Columns
 		successResp.RS.Values = result.Values
 		successResp.RS.Count = result.Count
-	case query.UPDATE_STMT, query.DELETE_STMT:
+	case parser.UPDATE_STMT, parser.DELETE_STMT:
 		successResp.RS.Count = result.Count
 	}
 
