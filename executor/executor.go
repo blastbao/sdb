@@ -48,6 +48,11 @@ func (e *Executor) execInsert(stmt *parser.InsertStatement) (*ExecutionResult, e
 		return nil, err
 	}
 
+	// TODO: fix to use idx name from plan
+	if err := e.engine.InsertIndex(stmt.Table+"_id", t); err != nil {
+		return nil, err
+	}
+
 	return &ExecutionResult{Message: "a record successfully inserted"}, nil
 }
 
