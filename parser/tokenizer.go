@@ -2,10 +2,10 @@ package parser
 
 import "strings"
 
-type TokenKind string
+type tokenKind string
 
 const (
-	EOF TokenKind = "EOF"
+	EOF tokenKind = "EOF"
 
 	SELECT = "SELECT"
 	FROM   = "FROM"
@@ -39,30 +39,30 @@ const (
 	ASTERISK = "ASTERISK"
 )
 
-func (tk TokenKind) String() string {
+func (tk tokenKind) String() string {
 	return string(tk)
 }
 
-type Token struct {
-	Kind TokenKind
+type token struct {
+	Kind tokenKind
 
 	Val string
 }
 
-type Tokenizer struct {
+type tokenizer struct {
 	query string
 	pos   int
 }
 
-func NewTokenizer(query string) *Tokenizer {
-	return &Tokenizer{query: query}
+func newTokenizer(query string) *tokenizer {
+	return &tokenizer{query: query}
 }
 
-func (t *Tokenizer) isSpace() bool {
+func (t *tokenizer) isSpace() bool {
 	return t.query[t.pos] == ' ' || t.query[t.pos] == '\n' || t.query[t.pos] == '\t'
 }
 
-func (t *Tokenizer) isSymbol() bool {
+func (t *tokenizer) isSymbol() bool {
 	symbols := []byte{'{', '}', '(', ')', ',', '=', '*', ';'}
 	for _, symbol := range symbols {
 		if t.query[t.pos] == symbol {
@@ -73,29 +73,29 @@ func (t *Tokenizer) isSymbol() bool {
 	return false
 }
 
-func (t *Tokenizer) isEnd() bool {
+func (t *tokenizer) isEnd() bool {
 	return t.pos >= len(t.query)
 }
 
-func (t *Tokenizer) isNumber() bool {
+func (t *tokenizer) isNumber() bool {
 	return t.query[t.pos] >= '0' && t.query[t.pos] <= '9'
 }
 
-func (t *Tokenizer) isPoint() bool {
+func (t *tokenizer) isPoint() bool {
 	return t.query[t.pos] == '.'
 }
 
-func (t *Tokenizer) isDoubleQuote() bool {
+func (t *tokenizer) isDoubleQuote() bool {
 	return t.query[t.pos] == '"'
 }
 
-func (t *Tokenizer) skipSpaces() {
+func (t *tokenizer) skipSpaces() {
 	for t.isSpace() {
 		t.pos++
 	}
 }
 
-func (t *Tokenizer) scanNumber() string {
+func (t *tokenizer) scanNumber() string {
 	var out []uint8
 	for !t.isEnd() && !t.isSpace() && (t.isNumber() || t.isPoint()) {
 		out = append(out, t.query[t.pos])
@@ -104,7 +104,7 @@ func (t *Tokenizer) scanNumber() string {
 	return string(out)
 }
 
-func (t *Tokenizer) scanStringVal() string {
+func (t *tokenizer) scanStringVal() string {
 	var out []uint8
 	for !t.isEnd() && !t.isSymbol() && !t.isSpace() {
 		out = append(out, t.query[t.pos])
@@ -114,7 +114,7 @@ func (t *Tokenizer) scanStringVal() string {
 	return string(out)
 }
 
-func (t *Tokenizer) scanQuotedStringVal() string {
+func (t *tokenizer) scanQuotedStringVal() string {
 	// leading double quote is consumed by t.match()
 	var out []uint8
 	for !t.isEnd() && !t.isDoubleQuote() {
@@ -129,7 +129,7 @@ func (t *Tokenizer) scanQuotedStringVal() string {
 	return string(out)
 }
 
-func (t *Tokenizer) match(s string) bool {
+func (t *tokenizer) match(s string) bool {
 	length := len(s)
 	// remaining characters length must be longer than s length
 	if len(t.query)-t.pos < length {
@@ -144,71 +144,71 @@ func (t *Tokenizer) match(s string) bool {
 	return false
 }
 
-func (t *Tokenizer) Tokenize() []*Token {
-	tokens := []*Token{}
+func (t *tokenizer) tokenize() []*token {
+	tokens := []*token{}
 
 	for t.pos = 0; t.pos < len(t.query); {
 		t.skipSpaces()
 
 		switch {
 		case t.match("select"):
-			tokens = append(tokens, &Token{Kind: SELECT})
+			tokens = append(tokens, &token{Kind: SELECT})
 		case t.match("from"):
-			tokens = append(tokens, &Token{Kind: FROM})
+			tokens = append(tokens, &token{Kind: FROM})
 		case t.match("where"):
-			tokens = append(tokens, &Token{Kind: WHERE})
+			tokens = append(tokens, &token{Kind: WHERE})
 		case t.match("and"):
-			tokens = append(tokens, &Token{Kind: AND})
+			tokens = append(tokens, &token{Kind: AND})
 		case t.match("create"):
-			tokens = append(tokens, &Token{Kind: CREATE})
+			tokens = append(tokens, &token{Kind: CREATE})
 		case t.match("table"):
-			tokens = append(tokens, &Token{Kind: TABLE})
+			tokens = append(tokens, &token{Kind: TABLE})
 		case t.match("insert"):
-			tokens = append(tokens, &Token{Kind: INSERT})
+			tokens = append(tokens, &token{Kind: INSERT})
 		case t.match("into"):
-			tokens = append(tokens, &Token{Kind: INTO})
+			tokens = append(tokens, &token{Kind: INTO})
 		case t.match("values"):
-			tokens = append(tokens, &Token{Kind: VALUES})
+			tokens = append(tokens, &token{Kind: VALUES})
 		case t.match("primary"):
-			tokens = append(tokens, &Token{Kind: PRIMARY})
+			tokens = append(tokens, &token{Kind: PRIMARY})
 		case t.match("key"):
-			tokens = append(tokens, &Token{Kind: KEY})
+			tokens = append(tokens, &token{Kind: KEY})
 
 		case t.match("("):
-			tokens = append(tokens, &Token{Kind: LPAREN})
+			tokens = append(tokens, &token{Kind: LPAREN})
 		case t.match(")"):
-			tokens = append(tokens, &Token{Kind: RPAREN})
+			tokens = append(tokens, &token{Kind: RPAREN})
 		case t.match(","):
-			tokens = append(tokens, &Token{Kind: COMMA})
+			tokens = append(tokens, &token{Kind: COMMA})
 		case t.match("="):
-			tokens = append(tokens, &Token{Kind: EQ})
+			tokens = append(tokens, &token{Kind: EQ})
 		case t.match("*"):
-			tokens = append(tokens, &Token{Kind: ASTERISK})
+			tokens = append(tokens, &token{Kind: ASTERISK})
 		case t.match(";"):
-			tokens = append(tokens, &Token{Kind: EOF})
+			tokens = append(tokens, &token{Kind: EOF})
 
 		case t.match("bool"):
-			tokens = append(tokens, &Token{Kind: BOOL})
+			tokens = append(tokens, &token{Kind: BOOL})
 		case t.match("int64"):
-			tokens = append(tokens, &Token{Kind: INT64})
+			tokens = append(tokens, &token{Kind: INT64})
 		case t.match("float64"):
-			tokens = append(tokens, &Token{Kind: FLOAT64})
+			tokens = append(tokens, &token{Kind: FLOAT64})
 		// case t.match("bytes"):
 		// 	tokens = append(tokens, &Token{Kind: BYTES})
 		case t.match("string"):
-			tokens = append(tokens, &Token{Kind: STRING})
+			tokens = append(tokens, &token{Kind: STRING})
 		case t.match("timestamp"):
-			tokens = append(tokens, &Token{Kind: TIMESTAMP})
+			tokens = append(tokens, &token{Kind: TIMESTAMP})
 
 		case t.match(`"`):
 			s := t.scanQuotedStringVal()
-			tokens = append(tokens, &Token{Kind: STRING_VAL, Val: s})
+			tokens = append(tokens, &token{Kind: STRING_VAL, Val: s})
 		case t.isNumber():
 			s := t.scanNumber()
-			tokens = append(tokens, &Token{Kind: NUMBER_VAL, Val: s})
+			tokens = append(tokens, &token{Kind: NUMBER_VAL, Val: s})
 		default:
 			s := t.scanStringVal()
-			tokens = append(tokens, &Token{Kind: STRING_VAL, Val: s})
+			tokens = append(tokens, &token{Kind: STRING_VAL, Val: s})
 		}
 	}
 

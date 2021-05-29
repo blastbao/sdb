@@ -9,11 +9,11 @@ import (
 func TestTokenizer_Tokenize(t *testing.T) {
 	tests := []struct {
 		query    string
-		expected []*Token
+		expected []*token
 	}{
 		{
 			query: "SELECT * FROM users WHERE id = 5;",
-			expected: []*Token{
+			expected: []*token{
 				{Kind: SELECT},
 				{Kind: ASTERISK},
 				{Kind: FROM},
@@ -27,7 +27,7 @@ func TestTokenizer_Tokenize(t *testing.T) {
 		},
 		{
 			query: `SELECT id, name FROM users WHERE name = "bob" AND age = 25;`,
-			expected: []*Token{
+			expected: []*token{
 				{Kind: SELECT},
 				{Kind: STRING_VAL, Val: "id"},
 				{Kind: COMMA},
@@ -47,7 +47,7 @@ func TestTokenizer_Tokenize(t *testing.T) {
 		},
 		{
 			query: `CREATE TABLE users (id int64, name string, verified bool, registered timestamp);`,
-			expected: []*Token{
+			expected: []*token{
 				{Kind: CREATE},
 				{Kind: TABLE},
 				{Kind: STRING_VAL, Val: "users"},
@@ -74,7 +74,7 @@ INSERT INTO users
 VALUES 
   (1, "bob", true, "2021-05-01 17:59:59"),
   (2, "alice", false, "2021-05-02 17:59:59");`,
-			expected: []*Token{
+			expected: []*token{
 				{Kind: INSERT},
 				{Kind: INTO},
 				{Kind: STRING_VAL, Val: "users"},
@@ -115,8 +115,8 @@ VALUES
 	for _, test := range tests {
 		test := test
 		t.Run(test.query, func(t *testing.T) {
-			tknz := NewTokenizer(test.query)
-			tokens := tknz.Tokenize()
+			tknz := newTokenizer(test.query)
+			tokens := tknz.tokenize()
 			testutil.MustEqual(t, tokens, test.expected)
 		})
 	}
