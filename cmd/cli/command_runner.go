@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/dty1er/sdb/sdb"
+	"github.com/dty1er/sdb/server"
 )
 
 type Runner interface {
@@ -69,7 +69,7 @@ func runCli() error {
 			continue
 		}
 
-		if resp.Result != "OK" {
+		if resp.Code != "OK" {
 			fmt.Fprintf(os.Stdout, "execution failed: %s\n", resp.Error.Message)
 			continue
 		}
@@ -78,8 +78,8 @@ func runCli() error {
 	}
 }
 
-func ExecQuery(query string) (*sdb.Response, error) {
-	r := sdb.Request{Query: query}
+func ExecQuery(query string) (*server.Response, error) {
+	r := server.Request{Query: query}
 	reqB, err := json.Marshal(&r)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func ExecQuery(query string) (*sdb.Response, error) {
 
 	defer resp.Body.Close()
 
-	var sdbResp sdb.Response
+	var sdbResp server.Response
 	if err := json.NewDecoder(resp.Body).Decode(&sdbResp); err != nil {
 		return nil, err
 	}
