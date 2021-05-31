@@ -10,6 +10,7 @@ import (
 
 	"github.com/dty1er/sdb/config"
 	"github.com/dty1er/sdb/engine"
+	"github.com/dty1er/sdb/parser"
 	"github.com/dty1er/sdb/sdb"
 	"github.com/dty1er/sdb/server"
 )
@@ -38,13 +39,14 @@ func (sc *ServerCommand) Run() error {
 		return fmt.Errorf("process configuration: %w", err)
 	}
 
+	parser := parser.New()
 	// TODO: init parser, planner, catalog, executor, engine
 	engine, err := engine.New(conf.Server)
 	if err != nil {
 		return fmt.Errorf("initialize storage engine: %w", err)
 	}
 
-	sdb := sdb.New(engine)
+	sdb := sdb.New(parser, nil, nil, nil, engine)
 
 	svr := server.New(sdb, conf.Server.Port)
 
