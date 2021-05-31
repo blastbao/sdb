@@ -5,6 +5,7 @@ import (
 
 	"github.com/dty1er/sdb/engine"
 	"github.com/dty1er/sdb/parser"
+	"github.com/dty1er/sdb/sdb"
 )
 
 type ExecutionResult struct {
@@ -56,12 +57,12 @@ func (e *Executor) execInsert(stmt *parser.InsertStatement) (*ExecutionResult, e
 	return &ExecutionResult{Message: "a record successfully inserted"}, nil
 }
 
-func (e *Executor) Execute(stmt *parser.Statement) (*ExecutionResult, error) {
-	switch stmt.Typ {
-	case parser.CREATE_TABLE_STMT:
-		return e.execCreateTable(stmt.CreateTable)
-	case parser.INSERT_STMT:
-		return e.execInsert(stmt.Insert)
+func (e *Executor) Execute(stmt sdb.Statement) (*ExecutionResult, error) {
+	switch s := stmt.(type) {
+	case *parser.CreateTableStatement:
+		return e.execCreateTable(s)
+	case *parser.InsertStatement:
+		return e.execInsert(s)
 	default:
 		return nil, fmt.Errorf("unexpected statement type")
 	}

@@ -3,6 +3,8 @@ package parser
 import (
 	"errors"
 	"fmt"
+
+	"github.com/dty1er/sdb/sdb"
 )
 
 type lexer struct {
@@ -63,7 +65,7 @@ func (p *lexer) mustBe(k tokenKind) *token {
 	return cur
 }
 
-func (p *lexer) lexCreateTableStmt() *Statement {
+func (p *lexer) lexCreateTableStmt() *CreateTableStatement {
 	p.mustBe(TABLE)
 	tbl := p.mustBe(STRING_VAL)
 	p.mustBe(LPAREN)
@@ -94,18 +96,15 @@ func (p *lexer) lexCreateTableStmt() *Statement {
 	p.mustBe(RPAREN)
 	p.mustBe(EOF)
 
-	return &Statement{
-		Typ: CREATE_TABLE_STMT,
-		CreateTable: &CreateTableStatement{
-			Table:         tbl.Val,
-			Columns:       columns,
-			Types:         types,
-			PrimaryKeyCol: pk,
-		},
+	return &CreateTableStatement{
+		Table:         tbl.Val,
+		Columns:       columns,
+		Types:         types,
+		PrimaryKeyCol: pk,
 	}
 }
 
-func (p *lexer) lexInsertStmt() *Statement {
+func (p *lexer) lexInsertStmt() *InsertStatement {
 	p.mustBe(INTO)
 	tbl := p.mustBe(STRING_VAL)
 
@@ -152,17 +151,14 @@ func (p *lexer) lexInsertStmt() *Statement {
 
 	p.mustBe(EOF)
 
-	return &Statement{
-		Typ: INSERT_STMT,
-		Insert: &InsertStatement{
-			Table:   tbl.Val,
-			Columns: columns,
-			Rows:    rows,
-		},
+	return &InsertStatement{
+		Table:   tbl.Val,
+		Columns: columns,
+		Rows:    rows,
 	}
 }
 
-func (l *lexer) lex() (stmt *Statement, err error) {
+func (l *lexer) lex() (stmt sdb.Statement, err error) {
 	// lex() uses panic/recover for non-local exits purpose.
 	// Usually they should not be used, but chaining error return significantly drops the readability.
 	defer func() {

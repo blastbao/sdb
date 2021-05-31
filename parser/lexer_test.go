@@ -3,6 +3,7 @@ package parser
 import (
 	"testing"
 
+	"github.com/dty1er/sdb/sdb"
 	"github.com/dty1er/sdb/testutil"
 )
 
@@ -10,7 +11,7 @@ func TestLexer_Lex_CreateTable(t *testing.T) {
 	tests := []struct {
 		name      string
 		tokens    []*token
-		expected  *Statement
+		expected  sdb.Statement
 		wantError bool
 	}{
 		{
@@ -36,14 +37,11 @@ func TestLexer_Lex_CreateTable(t *testing.T) {
 				{Kind: RPAREN},
 				{Kind: EOF},
 			},
-			expected: &Statement{
-				Typ: CREATE_TABLE_STMT,
-				CreateTable: &CreateTableStatement{
-					Table:         "users",
-					Columns:       []string{"id", "name", "verified", "registered"},
-					Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
-					PrimaryKeyCol: "id",
-				},
+			expected: &CreateTableStatement{
+				Table:         "users",
+				Columns:       []string{"id", "name", "verified", "registered"},
+				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
+				PrimaryKeyCol: "id",
 			},
 		},
 		{
@@ -128,7 +126,7 @@ func TestLexer_Lex_Insert(t *testing.T) {
 	tests := []struct {
 		name      string
 		tokens    []*token
-		expected  *Statement
+		expected  sdb.Statement
 		wantError bool
 	}{
 		{
@@ -168,15 +166,12 @@ func TestLexer_Lex_Insert(t *testing.T) {
 				{Kind: RPAREN},
 				{Kind: EOF},
 			},
-			expected: &Statement{
-				Typ: INSERT_STMT,
-				Insert: &InsertStatement{
-					Table:   "users",
-					Columns: []string{"id", "name", "verified", "registered"},
-					Rows: [][]string{
-						{"1", `"bob"`, "true", `"2021-05-01 17:59:59"`},
-						{"2", `"alice"`, "false", `"2021-05-02 17:59:59"`},
-					},
+			expected: &InsertStatement{
+				Table:   "users",
+				Columns: []string{"id", "name", "verified", "registered"},
+				Rows: [][]string{
+					{"1", `"bob"`, "true", `"2021-05-01 17:59:59"`},
+					{"2", `"alice"`, "false", `"2021-05-02 17:59:59"`},
 				},
 			},
 		},
@@ -208,15 +203,12 @@ func TestLexer_Lex_Insert(t *testing.T) {
 				{Kind: RPAREN},
 				{Kind: EOF},
 			},
-			expected: &Statement{
-				Typ: INSERT_STMT,
-				Insert: &InsertStatement{
-					Table:   "users",
-					Columns: []string{},
-					Rows: [][]string{
-						{"1", `"bob"`, "true", `"2021-05-01 17:59:59"`},
-						{"2", `"alice"`, "false", `"2021-05-02 17:59:59"`},
-					},
+			expected: &InsertStatement{
+				Table:   "users",
+				Columns: []string{},
+				Rows: [][]string{
+					{"1", `"bob"`, "true", `"2021-05-01 17:59:59"`},
+					{"2", `"alice"`, "false", `"2021-05-02 17:59:59"`},
 				},
 			},
 		},
@@ -351,7 +343,7 @@ func TestParser_Parse_Select(t *testing.T) {
 	tests := []struct {
 		name      string
 		tokens    []*token
-		expected  *Statement
+		expected  sdb.Statement
 		wantError bool
 	}{
 		// {

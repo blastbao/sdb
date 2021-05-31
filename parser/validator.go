@@ -8,11 +8,11 @@ import (
 )
 
 type validator struct {
-	stmt    *Statement
+	stmt    sdb.Statement
 	catalog sdb.Catalog
 }
 
-func newValidator(stmt *Statement, catalog sdb.Catalog) *validator {
+func newValidator(stmt sdb.Statement, catalog sdb.Catalog) *validator {
 	return &validator{stmt: stmt, catalog: catalog}
 }
 
@@ -52,9 +52,7 @@ func validType(typ string) bool {
 	return false
 }
 
-func (v *validator) validateCreateTableStmt() error {
-	stmt := v.stmt.CreateTable
-
+func (v *validator) validateCreateTableStmt(stmt *CreateTableStatement) error {
 	if len(stmt.PrimaryKeyCol) == 0 {
 		return fmt.Errorf("at least one primary key is required")
 	}
@@ -98,9 +96,7 @@ func (v *validator) validateCreateTableStmt() error {
 	return nil
 }
 
-func (v *validator) validateInsertStmt() error {
-	stmt := v.stmt.Insert
-
+func (v *validator) validateInsertStmt(stmt *InsertStatement) error {
 	if !v.catalog.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s does not exist", stmt.Table)
 	}
@@ -111,11 +107,11 @@ func (v *validator) validateInsertStmt() error {
 }
 
 func (v *validator) validate() error {
-	switch v.stmt.Typ {
-	case CREATE_TABLE_STMT:
-		return v.validateCreateTableStmt()
-	case INSERT_STMT:
-		return v.validateInsertStmt()
+	switch s := v.stmt.(type) {
+	case *CreateTableStatement:
+		return v.validateCreateTableStmt(s)
+	case *InsertStatement:
+		return v.validateInsertStmt(s)
 	default:
 		return fmt.Errorf("unexpected statement type")
 	}

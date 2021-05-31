@@ -131,7 +131,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 	for _, test := range tests {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
-			v := newValidator(&Statement{Typ: CREATE_TABLE_STMT, CreateTable: test.stmt}, test.catalog)
+			v := newValidator(test.stmt, test.catalog)
 			err := v.validate()
 			testutil.MustEqual(t, err != nil, test.wantError)
 		})
