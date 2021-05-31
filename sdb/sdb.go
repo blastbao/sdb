@@ -2,19 +2,55 @@ package sdb
 
 import (
 	"fmt"
-
-	"github.com/dty1er/sdb/executor"
-	"github.com/dty1er/sdb/parser"
 )
 
-type Request struct {
-	Query string // Raw SQL
+type SDB struct {
+	parser   Parser
+	planner  Planner
+	catalog  Catalog
+	executor Executor
+	engine   Engine
 }
 
-type Response struct {
-	Result string     // "OK" or "NG"
-	RS     *ResultSet // filled when "OK"
-	Error  *Error     // filled when "NG"
+type Statement interface {
+	isStatement()
+}
+
+type Parser interface {
+	Parse(sql string) (Statement, error)
+}
+
+type Query interface {
+	isQuery()
+}
+
+type Plan interface {
+	isPlan()
+}
+
+type Planner interface {
+	Plan(stmt Statement) (Plan, error)
+}
+
+type Catalog interface {
+	AddTable(table string, columns, types []string, pkey string) error
+	FindTable(table string) bool
+}
+
+type Executor interface {
+	// TODO: consider interface
+	Execute(plan Plan) (Result, error)
+}
+
+type Parameter struct {
+	Query string // Raw SQL
+	// TODO: define transaction context etc.
+}
+
+type Result struct {
+	Code  string     // "OK" or "NG" for now
+	RS    *ResultSet // filled when "OK"
+	Error *Error     // filled when "NG"
 }
 
 type Error struct {
@@ -28,54 +64,69 @@ type ResultSet struct {
 	Count   int        // empty when insert
 }
 
-func (sdb *SDB) ExecQuery(req *Request) *Response {
-	// TODO: encapsulate tokenize, parse, and validate into parser
-	tokenizer := parser.NewTokenizer(req.Query)
-	tokens := tokenizer.Tokenize()
+type Engine interface {
+	Shutdown() error
+}
 
-	p := parser.NewParser(tokens)
-	stmt, err := p.Parse()
+func New(parser Parser, planner Planner, catalog Catalog, executor Executor, engine Engine) *SDB {
+	return &SDB{
+		parser:   parser,
+		planner:  planner,
+		catalog:  catalog,
+		executor: executor,
+		engine:   engine,
+	}
+}
+
+func (sdb *SDB) ExecuteQuery(param *Parameter) *Result {
+	stmt, err := sdb.parser.Parse(param.Query)
 	if err != nil {
-		return &Response{
-			Result: "NG",
-			Error:  &Error{Message: fmt.Sprintf("failed to parse query: %s", err)},
+		return &Result{
+			Code: "NG",
+			// FUTURE WORK: should define and return &ParserError to return
+			// which part of the query looks wrong
+			Error: &Error{Message: fmt.Sprintf("failed to parse query: %s", err)},
 		}
 	}
 
-	validator := parser.NewValidator(stmt, sdb.engine)
-	if err := validator.Validate(); err != nil {
-		return &Response{
-			Result: "NG",
-			Error:  &Error{Message: fmt.Sprintf("failed to parse query: %s", err)},
-		}
-	}
-
-	// TODO: make planner pkg and make plan, then pass it to executor
-
-	executor := executor.NewExecutor(sdb.engine)
-	result, err := executor.Execute(stmt)
+	plan, err := sdb.planner.Plan(stmt)
 	if err != nil {
-		return &Response{
-			Result: "NG",
-			Error:  &Error{Message: fmt.Sprintf("failed to execute query: %s", err)},
+		return &Result{
+			Code: "NG",
+			// FUTURE WORK: should define and return &ParserError to return
+			// which part of the query looks wrong
+			Error: &Error{Message: fmt.Sprintf("failed to plan query: %s", err)},
 		}
 	}
 
-	successResp := &Response{
-		Result: "OK",
+	result, err := sdb.executor.Execute(plan)
+	if err != nil {
+		return &Result{
+			Code:  "NG",
+			Error: &Error{Message: fmt.Sprintf("failed to execute query: %s", err)},
+		}
+	}
+
+	successResp := &Result{
+		Code: "OK",
 		RS: &ResultSet{
-			Message: result.Message,
+			Message: result.RS.Message,
 		},
 	}
 
-	switch stmt.Typ {
-	case parser.SELECT_STMT:
-		successResp.RS.Columns = result.Columns
-		successResp.RS.Values = result.Values
-		successResp.RS.Count = result.Count
-	case parser.UPDATE_STMT, parser.DELETE_STMT:
-		successResp.RS.Count = result.Count
-	}
+	// switch stmt.Typ {
+	// case parser.SELECT_STMT:
+	// 	successResp.RS.Columns = result.Columns
+	// 	successResp.RS.Values = result.Values
+	// 	successResp.RS.Count = result.Count
+	// case parser.UPDATE_STMT, parser.DELETE_STMT:
+	// 	successResp.RS.Count = result.Count
+	// }
 
 	return successResp
+}
+
+func (sdb *SDB) Shutdown() error {
+	// TODO: should retry on error?
+	return sdb.engine.Shutdown()
 }
