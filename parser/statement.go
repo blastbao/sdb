@@ -1,5 +1,7 @@
 package parser
 
+import "github.com/dty1er/sdb/sdb"
+
 type StmtType uint8
 
 const (
@@ -29,7 +31,11 @@ type InsertStatement struct {
 	Rows    [][]string
 }
 
+// Statement represents a sql as statement.
+// It implements sdb.Statement interface.
 type Statement struct {
+	sdb.Statement
+
 	Typ         StmtType
 	CreateTable *CreateTableStatement
 	Select      *SelectStatement
