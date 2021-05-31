@@ -4,16 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dty1er/sdb/engine"
+	"github.com/dty1er/sdb/sdb"
 )
 
-type Validator struct {
-	stmt   *Statement
-	engine *engine.Engine
+type validator struct {
+	stmt    *Statement
+	catalog sdb.Catalog
 }
 
-func NewValidator(stmt *Statement, engine *engine.Engine) *Validator {
-	return &Validator{stmt: stmt, engine: engine}
+func newValidator(stmt *Statement, catalog sdb.Catalog) *validator {
+	return &validator{stmt: stmt, catalog: catalog}
 }
 
 func validColName(name string) bool {
@@ -52,7 +52,7 @@ func validType(typ string) bool {
 	return false
 }
 
-func (v *Validator) validateCreateTableStmt() error {
+func (v *validator) validateCreateTableStmt() error {
 	stmt := v.stmt.CreateTable
 
 	if len(stmt.PrimaryKeyCol) == 0 {
@@ -91,17 +91,17 @@ func (v *Validator) validateCreateTableStmt() error {
 		}
 	}
 
-	if v.engine.FindTable(stmt.Table) {
+	if v.catalog.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s already exists", stmt.Table)
 	}
 
 	return nil
 }
 
-func (v *Validator) validateInsertStmt() error {
+func (v *validator) validateInsertStmt() error {
 	stmt := v.stmt.Insert
 
-	if !v.engine.FindTable(stmt.Table) {
+	if !v.catalog.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s does not exist", stmt.Table)
 	}
 
@@ -110,7 +110,7 @@ func (v *Validator) validateInsertStmt() error {
 	return nil
 }
 
-func (v *Validator) Validate() error {
+func (v *validator) validate() error {
 	switch v.stmt.Typ {
 	case CREATE_TABLE_STMT:
 		return v.validateCreateTableStmt()
