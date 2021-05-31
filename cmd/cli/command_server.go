@@ -8,7 +8,10 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/dty1er/sdb/config"
+	"github.com/dty1er/sdb/engine"
 	"github.com/dty1er/sdb/sdb"
+	"github.com/dty1er/sdb/server"
 )
 
 type ServerCommand struct {
@@ -30,17 +33,27 @@ func (sc *ServerCommand) Init(args []string) error {
 func (sc *ServerCommand) Run() error {
 	ctx := context.Background()
 
-	db, err := sdb.New()
+	conf, err := config.Process()
 	if err != nil {
-		return err
+		return fmt.Errorf("process configuration: %w", err)
 	}
+
+	// TODO: init parser, planner, catalog, executor, engine
+	engine, err := engine.New(conf.Server)
+	if err != nil {
+		return fmt.Errorf("initialize storage engine: %w", err)
+	}
+
+	sdb := sdb.New(engine)
+
+	svr := server.New(sdb, conf.Server.Port)
 
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
 	defer stop()
 
 	go func() {
 		<-ctx.Done()
-		if err := db.Shutdown(ctx); err != nil {
+		if err := svr.Shutdown(ctx); err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			return
 		}
@@ -48,7 +61,7 @@ func (sc *ServerCommand) Run() error {
 		fmt.Fprintf(os.Stdout, "sdb server successfully stopped\n")
 	}()
 
-	err = db.Run()
+	err = svr.Run()
 	if err == http.ErrServerClosed {
 		err = nil
 	}
