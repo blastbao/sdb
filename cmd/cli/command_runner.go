@@ -63,7 +63,8 @@ func runCli() error {
 			query += " " + t
 		}
 
-		resp, err := ExecQuery(query)
+		// FUTURE WORK: change url based on the command line arguments
+		resp, err := ExecQuery("http://localhost:5525", query)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			continue
@@ -78,14 +79,14 @@ func runCli() error {
 	}
 }
 
-func ExecQuery(query string) (*server.Response, error) {
+func ExecQuery(address, query string) (*server.Response, error) {
 	r := server.Request{Query: query}
 	reqB, err := json.Marshal(&r)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", "http://localhost:5525/execute", bytes.NewBuffer(reqB))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/execute", address), bytes.NewBuffer(reqB))
 	if err != nil {
 		return nil, err
 	}
