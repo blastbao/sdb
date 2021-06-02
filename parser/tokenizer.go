@@ -193,8 +193,8 @@ func (t *tokenizer) tokenize() []*token {
 			tokens = append(tokens, &token{Kind: INT64})
 		case t.match("float64"):
 			tokens = append(tokens, &token{Kind: FLOAT64})
-		// case t.match("bytes"):
-		// 	tokens = append(tokens, &Token{Kind: BYTES})
+		case t.match("bytes"):
+			tokens = append(tokens, &token{Kind: BYTES})
 		case t.match("string"):
 			tokens = append(tokens, &token{Kind: STRING})
 		case t.match("timestamp"):
