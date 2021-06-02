@@ -48,7 +48,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 	tests := []struct {
 		name      string
 		stmt      *CreateTableStatement
-		catalog   *engine.Catalog
+		catalog   *catalog.Catalog
 		wantError bool
 	}{
 		{
@@ -59,7 +59,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -70,7 +70,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "id",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -81,7 +81,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "id",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -92,7 +92,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         tooManyTypes,
 				PrimaryKeyCol: "id",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -103,7 +103,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "xxx",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -114,7 +114,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT64", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "id",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -125,7 +125,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         []string{"INT32", "STRING", "BOOL", "TIMESTAMP"},
 				PrimaryKeyCol: "id",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: true,
 		},
 		{
@@ -136,7 +136,7 @@ func TestValidator_Validate_CreateTable(t *testing.T) {
 				Types:         maxTypes,
 				PrimaryKeyCol: "id_1",
 			},
-			catalog:   catalog,
+			catalog:   c,
 			wantError: false,
 		},
 	}

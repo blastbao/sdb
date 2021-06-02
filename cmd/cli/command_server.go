@@ -8,9 +8,13 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/dty1er/sdb/catalog"
 	"github.com/dty1er/sdb/config"
+	"github.com/dty1er/sdb/diskmanager"
 	"github.com/dty1er/sdb/engine"
+	"github.com/dty1er/sdb/executor"
 	"github.com/dty1er/sdb/parser"
+	"github.com/dty1er/sdb/planner"
 	"github.com/dty1er/sdb/sdb"
 	"github.com/dty1er/sdb/server"
 )
@@ -39,14 +43,25 @@ func (sc *ServerCommand) Run() error {
 		return fmt.Errorf("process configuration: %w", err)
 	}
 
-	parser := parser.New()
-	// TODO: init parser, planner, catalog, executor, engine
-	engine, err := engine.New(conf.Server)
+	diskManager := diskmanager.New(conf.Server.DBFilesDirectory)
+
+	catalog, err := catalog.New(diskManager)
 	if err != nil {
 		return fmt.Errorf("initialize storage engine: %w", err)
 	}
 
-	sdb := sdb.New(parser, nil, nil, nil, engine)
+	parser := parser.New(catalog)
+
+	engine, err := engine.New(conf.Server, catalog, diskManager)
+	if err != nil {
+		return fmt.Errorf("initialize storage engine: %w", err)
+	}
+
+	executor := executor.New(engine, catalog)
+
+	planner := planner.New(catalog)
+
+	sdb := sdb.New(parser, planner, catalog, executor, engine)
 
 	svr := server.New(sdb, conf.Server.Port)
 

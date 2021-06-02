@@ -5,41 +5,12 @@ import (
 )
 
 type SDB struct {
-	parser   Parser
-	planner  Planner
-	catalog  Catalog
-	executor Executor
-	engine   Engine
-}
-
-type Statement interface {
-	isStatement()
-}
-
-type Parser interface {
-	Parse(sql string) (Statement, error)
-}
-
-type Query interface {
-	isQuery()
-}
-
-type Plan interface {
-	isPlan()
-}
-
-type Planner interface {
-	Plan(stmt Statement) (Plan, error)
-}
-
-type Catalog interface {
-	AddTable(table string, columns, types []string, pkey string) error
-	FindTable(table string) bool
-}
-
-type Executor interface {
-	// TODO: consider interface
-	Execute(plan Plan) (Result, error)
+	parser      Parser
+	planner     Planner
+	catalog     Catalog
+	executor    Executor
+	engine      Engine
+	diskManager DiskManager
 }
 
 type Parameter struct {
@@ -64,17 +35,14 @@ type ResultSet struct {
 	Count   int        // empty when insert
 }
 
-type Engine interface {
-	Shutdown() error
-}
-
-func New(parser Parser, planner Planner, catalog Catalog, executor Executor, engine Engine) *SDB {
+func New(parser Parser, planner Planner, catalog Catalog, executor Executor, engine Engine, diskManager DiskManager) *SDB {
 	return &SDB{
-		parser:   parser,
-		planner:  planner,
-		catalog:  catalog,
-		executor: executor,
-		engine:   engine,
+		parser:      parser,
+		planner:     planner,
+		catalog:     catalog,
+		executor:    executor,
+		engine:      engine,
+		diskManager: diskManager,
 	}
 }
 
@@ -128,5 +96,8 @@ func (sdb *SDB) ExecuteQuery(param *Parameter) *Result {
 
 func (sdb *SDB) Shutdown() error {
 	// TODO: should retry on error?
+	if err := sdb.catalog.Persist(); err != nil {
+		return err
+	}
 	return sdb.engine.Shutdown()
 }

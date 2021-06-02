@@ -6,6 +6,7 @@ import (
 
 	"github.com/dty1er/sdb/btree"
 	"github.com/dty1er/sdb/config"
+	"github.com/dty1er/sdb/sdb"
 )
 
 func init() {
@@ -17,28 +18,29 @@ func init() {
 type Engine struct {
 	bufferPool    *BufferPool
 	pageDirectory *PageDirectory
-	diskManager   *DiskManager
-	catalog       *Catalog
+
+	catalog     sdb.Catalog
+	diskManager sdb.DiskManager
 }
 
-func New(conf *config.Server) (*Engine, error) {
-	diskManager := NewDiskManager(conf.DBFilesDirectory)
+func New(conf *config.Server, catalog sdb.Catalog, diskManager sdb.DiskManager) (*Engine, error) {
+	indices := make(map[IndexKey]*btree.BTree)
+	indexCatalog := catalog.ListIndices()
+	for _, index := range indexCatalog {
+		bt := btree.New()
+		if err := diskManager.Load(string(toIndexKey(index.Table, index.Name))+".idx", 0, bt); err != nil {
+			return nil, err
+		}
 
-	indices, err := diskManager.LoadIndex()
-	if err != nil {
-		return nil, err
+		key := toIndexKey(index.Table, string(index.Name))
+		indices[key] = bt
 	}
 	if len(indices) == 0 {
-		indices = map[string]*btree.BTree{}
+		indices = map[IndexKey]*btree.BTree{}
 	}
 
-	pageDirectory, err := diskManager.LoadPageDirectory()
-	if err != nil {
-		return nil, err
-	}
-
-	catalog, err := diskManager.LoadCatalog()
-	if err != nil {
+	pageDirectory := &PageDirectory{}
+	if err := diskManager.Load("__page_directory.db", 0, pageDirectory); err != nil {
 		return nil, err
 	}
 
@@ -47,18 +49,9 @@ func New(conf *config.Server) (*Engine, error) {
 	return &Engine{
 		bufferPool:    bufferPool,
 		pageDirectory: pageDirectory,
-		diskManager:   diskManager,
 		catalog:       catalog,
+		diskManager:   diskManager,
 	}, nil
-}
-
-func (e *Engine) AddTable(table string, columns, types []string, pkey string) error {
-	return e.catalog.AddTable(table, columns, types, pkey)
-}
-
-func (c *Engine) FindTable(table string) bool {
-	_, ok := c.catalog.Tables[table]
-	return ok
 }
 
 // CreateIndex initializes the btree index.
@@ -102,18 +95,18 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 				// this must not happen
 				panic(fmt.Sprintf("page is not found in the page directory: %s", err))
 			}
-			p, err := e.diskManager.GetPage(loc)
-			if err != nil {
+			var p Page
+			if err := e.diskManager.Load(loc.Filename, int(loc.Offset), &p); err != nil {
 				return err
 			}
 
-			evicted := e.bufferPool.InsertPage(table, p)
+			evicted := e.bufferPool.InsertPage(table, &p)
 			if evicted != nil {
 				loc, err := e.pageDirectory.GetPageLocation(table, evicted.GetID())
 				if err != nil {
 					return err
 				}
-				if err = e.diskManager.PersistPage(loc, evicted); err != nil {
+				if err = e.diskManager.Persist(loc.Filename, int(loc.Offset), evicted); err != nil {
 					return err
 				}
 			}
@@ -155,11 +148,11 @@ func (e *Engine) ReadTable(table string) ([]*Tuple, error) {
 			if err != nil {
 				panic(err) // this must not happen
 			}
-			p, err := e.diskManager.GetPage(loc)
-			if err != nil {
+			var p Page
+			if err := e.diskManager.Load(loc.Filename, int(loc.Offset), &p); err != nil {
 				return nil, err
 			}
-			page = p
+			page = &p
 		}
 
 		ts := page.GetTuples()
@@ -181,7 +174,7 @@ func (e *Engine) insertPage(table string, page *Page) error {
 		if err != nil {
 			return err
 		}
-		if err = e.diskManager.PersistPage(loc, evicted); err != nil {
+		if err = e.diskManager.Persist(loc.Filename, int(loc.Offset), evicted); err != nil {
 			return err
 		}
 	}
@@ -201,7 +194,7 @@ func (e *Engine) Shutdown() error {
 			if err != nil {
 				return err
 			}
-			if err := e.diskManager.PersistPage(loc, pd.page); err != nil {
+			if err := e.diskManager.Persist(loc.Filename, int(loc.Offset), pd.page); err != nil {
 				return err
 			}
 		}
@@ -215,11 +208,7 @@ func (e *Engine) Shutdown() error {
 	}
 
 	// persist pageDirectory
-	if err := e.diskManager.PersistPageDirectory(e.pageDirectory); err != nil {
-		return err
-	}
-
-	if err := e.diskManager.PersistCatalog(e.catalog); err != nil {
+	if err := e.diskManager.Persist("__page_directory.db", 0, e.pageDirectory); err != nil {
 		return err
 	}
 
