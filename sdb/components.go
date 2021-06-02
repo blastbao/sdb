@@ -39,7 +39,7 @@ type Executor interface {
 }
 
 type Engine interface {
-	CreateIndex(idxName string)
+	CreateIndex(table, idxName string)
 	Shutdown() error
 }
 

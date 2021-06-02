@@ -30,7 +30,7 @@ func (e *Executor) execCreateTable(plan *planner.CreateTablePlan) (*sdb.Result, 
 	}
 
 	for _, index := range plan.Indices {
-		e.engine.CreateIndex(index.Name)
+		e.engine.CreateIndex(index.Table, index.Name)
 	}
 
 	return &sdb.Result{RS: &sdb.ResultSet{Message: "table is successfully created"}}, nil
