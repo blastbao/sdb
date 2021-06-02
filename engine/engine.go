@@ -13,7 +13,7 @@ func init() {
 	btree.RegisterSerializationTarget(&Tuple{})
 }
 
-// Engine is ssdb core storage engine.
+// Engine is sdb core storage engine.
 // It implements sdb/engine.Engine interface.
 type Engine struct {
 	bufferPool    *BufferPool
