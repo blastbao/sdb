@@ -1,7 +1,10 @@
 package engine
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"sort"
 	"strconv"
 	"strings"
@@ -117,6 +120,23 @@ func (pd *PageDirectory) String() string {
 	sb.WriteString("}\n")
 
 	return sb.String()
+}
+
+func (pd *PageDirectory) Serialize() ([]byte, error) {
+	var buff bytes.Buffer
+	if err := json.NewEncoder(&buff).Encode(pd); err != nil {
+		return nil, fmt.Errorf("serialize page directory: %w", err)
+	}
+
+	return buff.Bytes(), nil
+}
+
+func (pd *PageDirectory) Deserialize(r io.Reader) error {
+	if err := json.NewDecoder(r).Decode(pd); err != nil {
+		return fmt.Errorf("deserialize json into page directory %w", err)
+	}
+
+	return nil
 }
 
 func toFilename(table string, offset int) string {
