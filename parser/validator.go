@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/sdb"
 )
 
@@ -34,22 +35,6 @@ func validColName(name string) bool {
 	}
 
 	return true
-}
-
-func validType(typ string) bool {
-	if typ == "" {
-		return false
-	}
-
-	validTypes := []string{"bool", "int64", "float64", "bytes", "string", "timestamp"}
-
-	for _, validType := range validTypes {
-		if strings.ToLower(typ) == validType {
-			return true
-		}
-	}
-
-	return false
 }
 
 func (v *validator) validateCreateTableStmt(stmt *CreateTableStatement) error {
@@ -84,7 +69,7 @@ func (v *validator) validateCreateTableStmt(stmt *CreateTableStatement) error {
 	}
 
 	for _, typ := range stmt.Types {
-		if !validType(typ) {
+		if !schema.IsValidColumnType(typ) {
 			return fmt.Errorf("type %s is not allowed", typ)
 		}
 	}

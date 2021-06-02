@@ -4,16 +4,28 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/dty1er/sdb/engine"
+	"github.com/dty1er/sdb/catalog"
+	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/testutil"
 )
 
 func TestValidator_Validate_CreateTable(t *testing.T) {
-	catalog := &engine.Catalog{
-		Tables: map[string]*engine.Table{
+	c := &catalog.Catalog{
+		Tables: map[string]*schema.Table{
 			"items": {
-				Columns: []string{"id", "name"},
-				Types:   []engine.Type{engine.Int64, engine.String},
+				Columns: []*schema.ColumnDef{
+					{
+						Name:    "id",
+						Type:    schema.ColumnTypeInt64,
+						Options: []schema.ColumnOption{schema.ColumnOptionPrimaryKey},
+					},
+					{
+						Name:    "name",
+						Type:    schema.ColumnTypeString,
+						Options: []schema.ColumnOption{},
+					},
+				},
+				PrimaryKeyIndex: 0,
 			},
 		},
 	}
