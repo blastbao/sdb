@@ -28,11 +28,11 @@ func Run(args []string) error {
 		return runCli()
 	}
 
-	subcommand := os.Args[1]
+	subcommand := args[0]
 
 	for _, cmd := range cmds {
 		if cmd.Name() == subcommand {
-			cmd.Init(os.Args[2:])
+			cmd.Init(args[1:])
 			return cmd.Run()
 		}
 	}
