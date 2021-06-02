@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"io"
 	"strings"
 )
 
@@ -129,6 +130,20 @@ func (p *Page) AppendTuple(t *Tuple) error {
 
 func (p *Page) GetID() PageID {
 	return p.decodeHeader().id
+}
+
+func (p *Page) Serialize() ([]byte, error) {
+	return p.bs[:], nil
+}
+
+func (p *Page) Deserialize(r io.Reader) error {
+	b := [PageSize]byte{}
+	if _, err := r.Read(b[:]); err != nil {
+		return err
+	}
+
+	p.bs = b
+	return nil
 }
 
 func (p *Page) String() string {
