@@ -47,7 +47,7 @@ func (sc *ServerCommand) Run() error {
 
 	catalog, err := catalog.New(diskManager)
 	if err != nil {
-		return fmt.Errorf("initialize storage engine: %w", err)
+		return fmt.Errorf("initialize catalog: %w", err)
 	}
 
 	parser := parser.New(catalog)
