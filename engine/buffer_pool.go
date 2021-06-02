@@ -17,14 +17,20 @@ type pageDescriptor struct {
 	dirty bool
 }
 
+type IndexKey string
+
+func toIndexKey(table, idxName string) IndexKey {
+	return IndexKey(fmt.Sprintf("%s__%s", table, idxName))
+}
+
 // BufferPool manages pages, indices, and files on the disk.
 type BufferPool struct {
 	// lru cache element type is *PageDescriptor. BufferPool never manages Page directly.
 	frames  *lru.Cache
-	indices map[string]*btree.BTree
+	indices map[IndexKey]*btree.BTree
 }
 
-func NewBufferPool(entryCount int, indices map[string]*btree.BTree) *BufferPool {
+func NewBufferPool(entryCount int, indices map[IndexKey]*btree.BTree) *BufferPool {
 	frames := lru.New(lru.WithCap(entryCount))
 	return &BufferPool{frames: frames, indices: indices}
 }
@@ -35,8 +41,9 @@ func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
 	return string(hash[:])
 }
 
-func (bp *BufferPool) readIndex(idxName string) *btree.BTree {
-	return bp.indices[idxName]
+func (bp *BufferPool) readIndex(table, idxName string) *btree.BTree {
+	key := toIndexKey(table, idxName)
+	return bp.indices[key]
 }
 
 // FindPage returns if the buffer pool has the page.

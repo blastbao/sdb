@@ -62,15 +62,17 @@ func (c *Engine) FindTable(table string) bool {
 }
 
 // CreateIndex initializes the btree index.
-func (e *Engine) CreateIndex(idxName string) {
+func (e *Engine) CreateIndex(table, idxName string) {
 	bt := btree.New()
 
-	e.bufferPool.indices[idxName] = bt
+	key := toIndexKey(table, idxName)
+	e.bufferPool.indices[key] = bt
 }
 
 // InsertIndex inserts a record to the index
-func (e *Engine) InsertIndex(idxName string, t *Tuple) error {
-	index := e.bufferPool.indices[idxName]
+func (e *Engine) InsertIndex(table, idxName string, t *Tuple) error {
+	key := toIndexKey(table, idxName)
+	index := e.bufferPool.indices[key]
 	index.Put(t)
 
 	return nil
@@ -136,11 +138,11 @@ func (e *Engine) InsertTuple(table string, t *Tuple) error {
 	return nil
 }
 
-func (e *Engine) ReadIndex(idxName string) *btree.BTree {
+func (e *Engine) ReadIndex(table, idxName string) *btree.BTree {
 	// FUTURE WORK: it assumes every index is cached in buffer pool, but
 	// it makes sdb require a lot of memory. Some of them should be cached but
 	// some should be on disk.
-	return e.bufferPool.readIndex(idxName)
+	return e.bufferPool.readIndex(table, idxName)
 }
 
 func (e *Engine) ReadTable(table string) ([]*Tuple, error) {
@@ -206,8 +208,8 @@ func (e *Engine) Shutdown() error {
 	}
 
 	// persist indices
-	for table, index := range e.bufferPool.indices {
-		if err := e.diskManager.PersistIndex(table, index); err != nil {
+	for idxKey, index := range e.bufferPool.indices {
+		if err := e.diskManager.Persist(string(idxKey)+".idx", 0, index); err != nil {
 			return err
 		}
 	}
