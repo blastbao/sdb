@@ -24,6 +24,7 @@ type Engine struct {
 }
 
 func New(conf *config.Server, catalog sdb.Catalog, diskManager sdb.DiskManager) (*Engine, error) {
+	// Load index
 	indices := make(map[IndexKey]*btree.BTree)
 	indexCatalog := catalog.ListIndices()
 	for _, index := range indexCatalog {
@@ -39,6 +40,7 @@ func New(conf *config.Server, catalog sdb.Catalog, diskManager sdb.DiskManager) 
 		indices = map[IndexKey]*btree.BTree{}
 	}
 
+	// Load Page directory
 	pageDirectory := &PageDirectory{}
 	if err := diskManager.Load("__page_directory.db", 0, pageDirectory); err != nil {
 		return nil, err
