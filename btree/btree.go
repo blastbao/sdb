@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"strings"
 	"sync"
 )
@@ -261,25 +262,21 @@ func setParent(nodes []*Node, parent *Node) {
 	}
 }
 
-// Serialize serializes the btree using encoding/gob
 func (bt *BTree) Serialize() ([]byte, error) {
-	buff := new(bytes.Buffer)
-	if err := gob.NewEncoder(buff).Encode(&bt); err != nil {
+	var buff bytes.Buffer
+	if err := gob.NewEncoder(&buff).Encode(&bt); err != nil {
 		return nil, fmt.Errorf("serialize btree: %w", err)
 	}
 
 	return buff.Bytes(), nil
 }
 
-func Deserialize(bs []byte) (*BTree, error) {
-	var bt BTree
-	buff := bytes.NewBuffer(bs)
-	if err := gob.NewDecoder(buff).Decode(&bt); err != nil {
-		return nil, fmt.Errorf("deserialize btree: %w", err)
+func (bt *BTree) Deserialize(r io.Reader) error {
+	if err := gob.NewDecoder(r).Decode(bt); err != nil {
+		return fmt.Errorf("deserialize btree: %w", err)
 	}
 
-	bt.latch = sync.RWMutex{}
-	return &bt, nil
+	return nil
 }
 
 // String returns a string representation of container (for debugging purposes)
