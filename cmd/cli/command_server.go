@@ -61,7 +61,7 @@ func (sc *ServerCommand) Run() error {
 
 	planner := planner.New(catalog)
 
-	sdb := sdb.New(parser, planner, catalog, executor, engine)
+	sdb := sdb.New(parser, planner, catalog, executor, engine, diskManager)
 
 	svr := server.New(sdb, conf.Server.Port)
 
