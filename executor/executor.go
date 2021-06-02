@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dty1er/sdb/engine"
-	"github.com/dty1er/sdb/parser"
+	"github.com/dty1er/sdb/planner"
 	"github.com/dty1er/sdb/sdb"
 )
 
@@ -16,27 +16,28 @@ type ExecutionResult struct {
 }
 
 type Executor struct {
-	engine *engine.Engine
+	engine  sdb.Engine
+	catalog sdb.Catalog
 }
 
-func NewExecutor(engine *engine.Engine) *Executor {
-	return &Executor{engine: engine}
+func New(engine sdb.Engine, catalog sdb.Catalog) *Executor {
+	return &Executor{engine: engine, catalog: catalog}
 }
 
-func (e *Executor) execCreateTable(stmt *parser.CreateTableStatement) (*ExecutionResult, error) {
-	// TODO lock catalog
-	if err := e.engine.AddTable(stmt.Table, stmt.Columns, stmt.Types, stmt.PrimaryKeyCol); err != nil {
+func (e *Executor) execCreateTable(plan *planner.CreateTablePlan) (*sdb.Result, error) {
+	if err := e.catalog.AddTable(plan.Table, plan.Columns, plan.Indices); err != nil {
 		return nil, err
 	}
 
-	// pkey index is automatically created by default
-	e.engine.CreateIndex(fmt.Sprintf("%s_%s", stmt.Table, stmt.PrimaryKeyCol))
+	for _, index := range plan.Indices {
+		e.engine.CreateIndex(index.Name)
+	}
 
-	return &ExecutionResult{}, nil
+	return &sdb.Result{RS: &sdb.ResultSet{Message: "table is successfully created"}}, nil
 }
 
 // WIP
-func (e *Executor) execInsert(stmt *parser.InsertStatement) (*ExecutionResult, error) {
+func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {
 	vals := []interface{}{}
 	for i := 0; i < len(stmt.Rows); i++ {
 		row := stmt.Rows[i]
@@ -54,15 +55,15 @@ func (e *Executor) execInsert(stmt *parser.InsertStatement) (*ExecutionResult, e
 		return nil, err
 	}
 
-	return &ExecutionResult{Message: "a record successfully inserted"}, nil
+	return &sdb.Result{RS: &sdb.ResultSet{Message: "a record successfully inserted"}}, nil
 }
 
-func (e *Executor) Execute(stmt sdb.Statement) (*ExecutionResult, error) {
-	switch s := stmt.(type) {
-	case *parser.CreateTableStatement:
-		return e.execCreateTable(s)
-	case *parser.InsertStatement:
-		return e.execInsert(s)
+func (e *Executor) Execute(plan sdb.Plan) (*sdb.Result, error) {
+	switch p := plan.(type) {
+	case *planner.CreateTablePlan:
+		return e.execCreateTable(p)
+	case *planner.InsertPlan:
+		return e.execInsert(p)
 	default:
 		return nil, fmt.Errorf("unexpected statement type")
 	}
