@@ -16,9 +16,9 @@ import (
 type Catalog struct {
 	Tables map[string]*schema.Table
 	// FUTURE WORK: Add views, users, etc.
-	latch sync.RWMutex `json:"-"`
 
-	diskManager sdb.DiskManager
+	latch       sync.RWMutex    `json:"-"`
+	diskManager sdb.DiskManager `json:"-"`
 }
 
 func NewEmptyCatalog() *Catalog {
