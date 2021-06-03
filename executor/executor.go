@@ -8,13 +8,6 @@ import (
 	"github.com/dty1er/sdb/sdb"
 )
 
-type ExecutionResult struct {
-	Message string
-	Columns []string
-	Values  [][]string
-	Count   int
-}
-
 type Executor struct {
 	engine  sdb.Engine
 	catalog sdb.Catalog
