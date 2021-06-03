@@ -82,11 +82,41 @@ func (v *validator) validateCreateTableStmt(stmt *CreateTableStatement) error {
 }
 
 func (v *validator) validateInsertStmt(stmt *InsertStatement) error {
+	if len(stmt.Rows) > 1000 {
+		return fmt.Errorf("Inserting rows number exceeded the limit 1000: %d", len(stmt.Rows))
+	}
+	colLen := len(stmt.Columns)
+	for _, row := range stmt.Rows {
+		if len(row) != colLen {
+			return fmt.Errorf("row size %d must be the same as column length %d", len(row), colLen)
+		}
+	}
+
 	if !v.catalog.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s does not exist", stmt.Table)
 	}
 
-	// TODO: make sure the given record matches the table scheme
+	table := v.catalog.GetTable(stmt.Table)
+
+	for i, col := range stmt.Columns {
+		var typ schema.ColumnType
+		for _, actualCol := range table.Columns {
+			if col == actualCol.Name {
+				typ = actualCol.Type
+				break
+			}
+		}
+		if typ == 0 {
+			return fmt.Errorf("column %s is not defined in the table %s", col, stmt.Table)
+		}
+
+		for _, row := range stmt.Rows {
+			v := row[i]
+			if _, err := schema.ConvertValue(v, typ); err != nil {
+				return fmt.Errorf("invalid value %v for column %s, type %s", v, col, typ)
+			}
+		}
+	}
 
 	return nil
 }

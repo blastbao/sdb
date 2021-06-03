@@ -3,7 +3,6 @@ package planner
 import (
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/dty1er/sdb/parser"
 	"github.com/dty1er/sdb/schema"
@@ -46,7 +45,7 @@ func (p *Planner) PlanInsert(stmt *parser.InsertStatement) *InsertPlan {
 		col := columns[i]
 		if column.Name == col {
 			for j := range rows {
-				v := convert(rows[j][i], column.Type)
+				v, _ := schema.ConvertValue(rows[j][i], column.Type)
 				tuples[j][i] = v
 			}
 		} else {
@@ -97,39 +96,4 @@ func sortRowsAndColumns(rows [][]string, columns []string, table *schema.Table) 
 	}
 
 	return rows, columns
-}
-
-func convert(v string, t schema.ColumnType) interface{} {
-	switch t {
-	case schema.ColumnTypeBool:
-		if v == "true" {
-			return true
-		} else {
-			return false
-		}
-	case schema.ColumnTypeInt64:
-		iv, _ := strconv.ParseInt(v, 10, 64) // Error is checked in parse phase in advance
-		return iv
-	case schema.ColumnTypeFloat64:
-		fv, _ := strconv.ParseFloat(v, 64) // Error is checked in parse phase in advance
-		return fv
-	case schema.ColumnTypeBytes:
-		return []byte(v)
-	case schema.ColumnTypeString:
-		return v
-	case schema.ColumnTypeTimestamp:
-		layouts := []string{ // FUTURE WORK: should support more formats?
-			"2006-01-02 15:04:05",
-			"2006-01-02",
-			time.RFC3339,
-		}
-		for _, layout := range layouts {
-			t, err := time.Parse(layout, v)
-			if err != nil {
-				return t
-			}
-		}
-		return time.Time{}
-	}
-	return nil
 }
