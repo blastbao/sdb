@@ -3,6 +3,7 @@ package engine
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"math"
 	"os"
 	"strings"
@@ -116,7 +117,7 @@ func NewTuple(values []interface{}, keyIndex int) *Tuple {
 }
 
 // Serialize encodes given t into byte slice. The size is not fixed.
-func SerializeTuple(t *Tuple) []byte {
+func (t *Tuple) Serialize() ([]byte, error) {
 	// type + length + is_key + spare
 	metadataLen := 2 + 2 + 1 + 3
 	var buf bytes.Buffer
@@ -167,12 +168,15 @@ func SerializeTuple(t *Tuple) []byte {
 		buf.Write(result)
 	}
 
-	return buf.Bytes()
+	return buf.Bytes(), nil
 }
 
 // Deserialize decodes given byte slice to a tuple.
-func DeserializeTuple(bs []byte) *Tuple {
-	t := &Tuple{}
+func (t *Tuple) Deserialize(r io.Reader) error {
+	bs, err := io.ReadAll(r)
+	if err != nil {
+		return err
+	}
 	offset := 0
 	for {
 		if len(bs) <= offset { // return once finished reading bs
@@ -221,7 +225,7 @@ func DeserializeTuple(bs []byte) *Tuple {
 		offset += int(length)
 	}
 
-	return t
+	return nil
 }
 
 func (t *Tuple) String() string {

@@ -74,7 +74,7 @@ func (e *Engine) InsertIndex(table, idxName string, t *Tuple) error {
 }
 
 // InsertTuple inserts a record to the given table.
-func (e *Engine) InsertTuple(table string, t *Tuple) error {
+func (e *Engine) InsertTuple(table string, t sdb.Tuple) error {
 	var pageID PageID
 	pageIDs := e.pageDirectory.GetPageIDs(table)
 	if len(pageIDs) == 0 {
@@ -157,7 +157,10 @@ func (e *Engine) ReadTable(table string) ([]*Tuple, error) {
 			page = &p
 		}
 
-		ts := page.GetTuples()
+		ts, err := page.GetTuples()
+		if err != nil {
+			return nil, err
+		}
 		tuples = append(tuples, ts...)
 	}
 

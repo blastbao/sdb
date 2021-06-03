@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"strings"
@@ -93,18 +92,13 @@ func (dc *DebugCommand) showIndex() error {
 		return fmt.Errorf("open file %s, %w", filename, err)
 	}
 
-	bs, err := io.ReadAll(file)
-	if err != nil {
-		return fmt.Errorf("read file %s, %w", filename, err)
-	}
-
-	deserialized, err := btree.Deserialize(bs)
-	if err != nil {
+	bt := btree.New()
+	if err := bt.Deserialize(file); err != nil {
 		return fmt.Errorf("deserialize index %s, %w", filename, err)
 	}
 
 	fmt.Printf("=======Debug: Index (%s)\n", filename)
-	fmt.Println(deserialized)
+	fmt.Println(bt)
 	fmt.Printf("=======\n")
 	return nil
 }

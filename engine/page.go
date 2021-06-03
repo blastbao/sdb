@@ -1,9 +1,12 @@
 package engine
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strings"
+
+	"github.com/dty1er/sdb/sdb"
 )
 
 type PageID uint32
@@ -89,19 +92,27 @@ func (p *Page) decodeHeader() pageHeader {
 	return h
 }
 
-func (p *Page) GetTuples() []*Tuple {
+func (p *Page) GetTuples() ([]*Tuple, error) {
 	header := p.decodeHeader()
 	tuples := make([]*Tuple, header.tuplesCount)
 	for i, slot := range header.slots {
 		bs := p.bs[slot.offset : slot.offset+slot.length]
-		tuples[i] = DeserializeTuple(bs[:])
+		var t Tuple
+		br := bytes.NewReader(bs[:])
+		if err := t.Deserialize(br); err != nil {
+			return nil, err
+		}
+		tuples[i] = &t
 	}
 
-	return tuples
+	return tuples, nil
 }
 
-func (p *Page) AppendTuple(t *Tuple) error {
-	tb := SerializeTuple(t)
+func (p *Page) AppendTuple(t sdb.Tuple) error {
+	tb, err := t.Serialize()
+	if err != nil {
+		return err
+	}
 
 	header := p.decodeHeader()
 	// type + length + is_key + spare + slots
@@ -162,7 +173,11 @@ func (p *Page) String() string {
 
 	sb.WriteString("  Tuples{\n")
 	for _, slot := range header.slots {
-		sb.WriteString(fmt.Sprintf("%v\n", DeserializeTuple(p.bs[slot.offset:slot.offset+slot.length])))
+		var t Tuple
+		if err := t.Deserialize(bytes.NewReader(p.bs[slot.offset : slot.offset+slot.length])); err != nil {
+			panic(err)
+		}
+		sb.WriteString(fmt.Sprintf("%v\n", t))
 	}
 	sb.WriteString("  },\n")
 	sb.WriteString("}\n")

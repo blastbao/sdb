@@ -6,6 +6,7 @@ import (
 
 	"github.com/dty1er/sdb/btree"
 	"github.com/dty1er/sdb/lru"
+	"github.com/dty1er/sdb/sdb"
 )
 
 // pageDescriptor is a management unit of page from buffer pool point of view.
@@ -85,7 +86,7 @@ func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
 
 // AppendTuple finds the page from page directory then puts tuple in it.
 // If the page is not found, false will be responded.
-func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple *Tuple) bool {
+func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple sdb.Tuple) bool {
 	key := bp.cacheKey(tableName, pageID)
 
 	// First, try to fetch the page for the table from cache

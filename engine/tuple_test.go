@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
@@ -11,7 +12,8 @@ func Test_Serialize_Deserialize_Tuple(t *testing.T) {
 	tim := time.Date(2000, time.January, 1, 0, 0, 0, 0, time.UTC)
 	tuple := NewTuple([]interface{}{true, int64(99), 3.14, []byte{'a', 'b', 'c'}, "sdb is a simple database", tim}, 1)
 
-	s := SerializeTuple(tuple)
+	s, err := tuple.Serialize()
+	testutil.MustBeNil(t, err)
 	expected := []byte{
 		0, 1, // Type bool
 		0, 1, // Length 1
@@ -53,7 +55,9 @@ func Test_Serialize_Deserialize_Tuple(t *testing.T) {
 
 	testutil.MustEqual(t, s, expected)
 
-	nt := DeserializeTuple(s)
+	var nt Tuple
+	err = nt.Deserialize(bytes.NewReader(s))
+	testutil.MustBeNil(t, err)
 	testutil.MustEqual(t, len(nt.Data), 6)
 	testutil.MustEqual(t, nt.Data[0], &TupleData{Typ: Bool, Length: 1, BoolVal: true})
 	testutil.MustEqual(t, nt.Data[1], &TupleData{Typ: Int64, Length: 8, Int64Val: 99, Key: true})
