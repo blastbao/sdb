@@ -65,10 +65,10 @@ func (e *Engine) CreateIndex(table, idxName string) {
 }
 
 // InsertIndex inserts a record to the index
-func (e *Engine) InsertIndex(table, idxName string, t *Tuple) error {
-	key := toIndexKey(table, idxName)
-	index := e.bufferPool.indices[key]
-	index.Put(t)
+func (e *Engine) InsertIndex(table, idxName string, k sdb.IndexKey, t sdb.Tuple) error {
+	// key := toIndexKey(table, idxName)
+	// index := e.bufferPool.indices[key]
+	// index.Put(t) // TODO: change btree interface to do Put(k, t)
 
 	return nil
 }

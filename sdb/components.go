@@ -42,9 +42,53 @@ type Executor interface {
 	Execute(plan Plan) (*Result, error)
 }
 
+// Tuple is a set of values which represents a row in a table.
+type Tuple interface {
+	Serializer
+	Deserializer
+}
+
+type IndexKey interface {
+	Less(than IndexKey) bool
+}
+
+type StringIndexKey struct {
+	val string
+}
+
+func NewStringIndexKey(val string) *StringIndexKey {
+	return &StringIndexKey{val: val}
+}
+
+func (k *StringIndexKey) Less(than IndexKey) bool {
+	thanV, ok := than.(*StringIndexKey)
+	if !ok {
+		return false
+	}
+	return k.val < thanV.val
+}
+
+type Int64IndexKey struct {
+	val int64
+}
+
+func NewInt64IndexKey(val int64) *Int64IndexKey {
+	return &Int64IndexKey{val: val}
+}
+
+func (k *Int64IndexKey) Less(than IndexKey) bool {
+	thanV, ok := than.(*Int64IndexKey)
+	if !ok {
+		return false
+	}
+	return k.val < thanV.val
+}
+
 // Engine is a storage engine of sdb.
 type Engine interface {
 	CreateIndex(table, idxName string)
+	InsertTuple(table string, t Tuple) error
+	InsertIndex(table, idxName string, key IndexKey, t Tuple) error
 	Shutdown() error
 }
 

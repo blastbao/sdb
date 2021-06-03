@@ -24,7 +24,7 @@ func (p *Planner) PlanCreateTable(stmt *parser.CreateTableStatement) *CreateTabl
 
 		if column == stmt.PrimaryKeyCol {
 			columns[i].Options = append(columns[i].Options, schema.ColumnOptionPrimaryKey)
-			indices = append(indices, &schema.Index{Name: column, Columns: []string{column}})
+			indices = append(indices, &schema.Index{Name: column, ColumnIndex: i})
 		}
 	}
 

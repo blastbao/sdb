@@ -31,24 +31,23 @@ func (e *Executor) execCreateTable(plan *planner.CreateTablePlan) (*sdb.Result, 
 
 // WIP
 func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {
-	vals := []interface{}{}
-	for i := 0; i < len(stmt.Rows); i++ {
-		row := stmt.Rows[i]
-		for j := range row {
-			vals = append(vals, row[j])
+	for _, v := range plan.Values {
+		tuple := engine.NewTuple(v, plan.Table.PrimaryKeyIndex)
+
+		// put in the table
+		if err := e.engine.InsertTuple(plan.Table.Name, tuple); err != nil {
+			return nil, err
+		}
+
+		// save tuple in index
+		for _, index := range plan.Indices {
+			if err := e.engine.InsertIndex(plan.Table.Name, index.Idx.Name, index.Key, tuple); err != nil {
+				return nil, err
+			}
 		}
 	}
-	t := engine.NewTuple(vals, 0)
-	if err := e.engine.InsertTuple(stmt.Table, t); err != nil {
-		return nil, err
-	}
 
-	// TODO: fix to use idx name from plan
-	if err := e.engine.InsertIndex(stmt.Table+"_id", t); err != nil {
-		return nil, err
-	}
-
-	return &sdb.Result{RS: &sdb.ResultSet{Message: "a record successfully inserted"}}, nil
+	return &sdb.Result{RS: &sdb.ResultSet{Message: "record successfully inserted"}}, nil
 }
 
 func (e *Executor) Execute(plan sdb.Plan) (*sdb.Result, error) {

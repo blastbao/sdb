@@ -77,9 +77,9 @@ func StrToColumnType(typ string) ColumnType {
 }
 
 type Index struct {
-	Table   string
-	Name    string
-	Columns []string
+	Table       string
+	Name        string
+	ColumnIndex int
 }
 
 type IndexKey interface {
@@ -92,6 +92,7 @@ type IndexElement struct {
 }
 
 type Table struct {
+	Name            string
 	Columns         []*ColumnDef
 	Indices         []*Index
 	PrimaryKeyIndex int

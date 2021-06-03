@@ -10,11 +10,17 @@ import (
 	"github.com/dty1er/sdb/sdb"
 )
 
+type Index struct {
+	Key sdb.IndexKey
+	Idx *schema.Index
+}
+
 type InsertPlan struct {
 	sdb.Plan
 
-	Table  *schema.Table
-	values [][]interface{}
+	Table   *schema.Table
+	Indices []*Index
+	Values  [][]interface{}
 }
 
 func (p *Planner) PlanInsert(stmt *parser.InsertStatement) *InsertPlan {
@@ -51,7 +57,20 @@ func (p *Planner) PlanInsert(stmt *parser.InsertStatement) *InsertPlan {
 		}
 	}
 
-	return &InsertPlan{Table: tableDef, values: tuples}
+	indices := make([]*Index, len(tableDef.Indices))
+	for _, row := range rows {
+		for i := range indices {
+			idx := tableDef.Indices[i]
+			indices[i] = &Index{Idx: idx}
+			if tableDef.Columns[idx.ColumnIndex].Type == schema.ColumnTypeInt64 {
+				iv, _ := strconv.ParseInt(row[idx.ColumnIndex], 10, 64)
+				indices[i].Key = sdb.NewInt64IndexKey(iv)
+			} else {
+				indices[i].Key = sdb.NewStringIndexKey(row[idx.ColumnIndex])
+			}
+		}
+	}
+	return &InsertPlan{Table: tableDef, Indices: indices, Values: tuples}
 }
 
 func sortRowsAndColumns(rows [][]string, columns []string, table *schema.Table) ([][]string, []string) {
