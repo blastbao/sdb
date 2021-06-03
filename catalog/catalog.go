@@ -42,6 +42,10 @@ func New(dm sdb.DiskManager) (*Catalog, error) {
 	return &c, nil
 }
 
+func (c *Catalog) GetTable(table string) *schema.Table {
+	return c.Tables[table]
+}
+
 func (c *Catalog) AddTable(table string, columns []*schema.ColumnDef, indices []*schema.Index) error {
 	c.latch.Lock()
 	defer c.latch.Unlock()
