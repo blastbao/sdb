@@ -8,7 +8,7 @@ import (
 
 type CreateTablePlan struct {
 	sdb.Plan
-	Table   string
+	Table   *schema.Table
 	Columns []*schema.ColumnDef
 	Indices []*schema.Index
 }
@@ -28,8 +28,12 @@ func (p *Planner) PlanCreateTable(stmt *parser.CreateTableStatement) *CreateTabl
 		}
 	}
 
+	table := p.catalog.GetTable(stmt.Table)
+
+	// TODO: fill secondary index based on table.Indices to support multiple indices
+
 	return &CreateTablePlan{
-		Table:   stmt.Table,
+		Table:   table,
 		Columns: columns,
 		Indices: indices,
 	}
