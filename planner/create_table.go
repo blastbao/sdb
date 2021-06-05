@@ -1,6 +1,9 @@
 package planner
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/dty1er/sdb/parser"
 	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/sdb"
@@ -8,7 +11,7 @@ import (
 
 type CreateTablePlan struct {
 	sdb.Plan
-	Table   *schema.Table
+	Table   string
 	Columns []*schema.ColumnDef
 	Indices []*schema.Index
 }
@@ -16,7 +19,9 @@ type CreateTablePlan struct {
 func (p *Planner) PlanCreateTable(stmt *parser.CreateTableStatement) *CreateTablePlan {
 	columns := make([]*schema.ColumnDef, len(stmt.Columns))
 	indices := []*schema.Index{}
+	table := strings.ToLower(stmt.Table)
 	for i, column := range stmt.Columns {
+		column = strings.ToLower(column)
 		columns[i] = &schema.ColumnDef{
 			Name: column,
 			Type: schema.StrToColumnType(stmt.Types[i]),
@@ -24,13 +29,10 @@ func (p *Planner) PlanCreateTable(stmt *parser.CreateTableStatement) *CreateTabl
 
 		if column == stmt.PrimaryKeyCol {
 			columns[i].Options = append(columns[i].Options, schema.ColumnOptionPrimaryKey)
-			indices = append(indices, &schema.Index{Name: column, ColumnIndex: i})
+			idxName := fmt.Sprintf("%s_pkey_%s", table, column)
+			indices = append(indices, &schema.Index{Table: table, Name: idxName, ColumnIndex: i})
 		}
 	}
-
-	table := p.catalog.GetTable(stmt.Table)
-
-	// TODO: fill secondary index based on table.Indices to support multiple indices
 
 	return &CreateTablePlan{
 		Table:   table,
