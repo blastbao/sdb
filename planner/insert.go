@@ -1,99 +1,84 @@
 package planner
 
 import (
-	"sort"
-	"strconv"
+	"strings"
 
 	"github.com/dty1er/sdb/parser"
 	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/sdb"
 )
 
-type Index struct {
-	Key sdb.IndexKey
-	Idx *schema.Index
+type Indices struct {
+	Keys []sdb.IndexKey
+	Idx  []*schema.Index
 }
 
 type InsertPlan struct {
 	sdb.Plan
 
 	Table   *schema.Table
-	Indices []*Index
+	Indices []*Indices
 	Values  [][]interface{}
 }
 
 func (p *Planner) PlanInsert(stmt *parser.InsertStatement) *InsertPlan {
-	// First, we want to fill the given rows to fit actual table schema correctly.
-	// For example, we have table t{ID, Name, Age}
-	// Insert statement can be like
-	// "Insert into t (Age, ID) Values (20, 1), (30, 2);"
-	// In this case, we want to create tuple {(1, "", 20), (2, "", 30)} where "" is the default value of Name column.
 	tableDef := p.catalog.GetTable(stmt.Table)
 
-	// space to store final tuples to save on database
-	tuples := make([][]interface{}, len(stmt.Rows))
-	for i := range tuples {
-		tuples[i] = make([]interface{}, len(tableDef.Columns))
+	values := [][]interface{}{}
+	indices := []*Indices{}
+
+	for _, row := range stmt.Rows {
+		vs, is := p.planInsertRow(tableDef, stmt.Columns, row)
+		values = append(values, vs)
+		indices = append(indices, is)
 	}
 
-	// First, we sort the column and given each row to be ordered.
-	// "(Age, ID) VALUES (20, 1), (30, 2)" will be (ID, Age): {(1, 20), (2, 30)}.
-	rows, columns := sortRowsAndColumns(stmt.Rows, stmt.Columns, tableDef)
-
-	// Then, we process each row from left to right
-	for i, column := range tableDef.Columns {
-		col := columns[i]
-		if column.Name == col {
-			for j := range rows {
-				v, _ := schema.ConvertValue(rows[j][i], column.Type)
-				tuples[j][i] = v
-			}
-		} else {
-			for j := range rows {
-				// the column is not specified in Insert statement. Put default value
-				tuples[j][i] = column.DefaultValue()
-			}
-		}
-	}
-
-	indices := make([]*Index, len(tableDef.Indices))
-	for _, row := range rows {
-		for i := range indices {
-			idx := tableDef.Indices[i]
-			indices[i] = &Index{Idx: idx}
-			if tableDef.Columns[idx.ColumnIndex].Type == schema.ColumnTypeInt64 {
-				iv, _ := strconv.ParseInt(row[idx.ColumnIndex], 10, 64)
-				indices[i].Key = sdb.NewInt64IndexKey(iv)
-			} else {
-				indices[i].Key = sdb.NewStringIndexKey(row[idx.ColumnIndex])
-			}
-		}
-	}
-	return &InsertPlan{Table: tableDef, Indices: indices, Values: tuples}
+	return &InsertPlan{Table: tableDef, Indices: indices, Values: values}
 }
 
-func sortRowsAndColumns(rows [][]string, columns []string, table *schema.Table) ([][]string, []string) {
-	m := map[string]int{}
-	for i, col := range table.Columns {
-		m[col.Name] = i
+// planInsertRow creates a complete record and index for the given row to be inserted.
+// The given row might be incomplete according to the table schema; for example, the actual schema is
+// Students{"id(int64)", "name(string)", "age(int64)"}
+// But the statement might be
+// (age, id) values (25, 1), (30, 2). In this case, name should be the default value of the column.
+// This method converts the given row (25, 1) to (1, "", 25).
+func (p *Planner) planInsertRow(table *schema.Table, columns, row []string) ([]interface{}, *Indices) {
+	result := make([]interface{}, len(table.Columns))
+	for i, columnDef := range table.Columns {
+		index := -1
+		// Look for the given column from the schema.
+		for j, col := range columns {
+			if strings.ToLower(col) == columnDef.Name {
+				index = j
+				break
+			}
+		}
+
+		if index == -1 {
+			// If the given column is not found in the schema, use default value
+			result[i] = columnDef.DefaultValue()
+		} else {
+			// Else, use the value from the row.
+			// The type is checked on validate, so ignore error
+			result[i], _ = schema.ConvertValue(row[index], columnDef.Type)
+		}
 	}
 
-	indices := []int{}
-
-	for _, column := range columns {
-		index := m[column]
-		indices = append(indices, index)
+	indices := &Indices{
+		Keys: make([]sdb.IndexKey, len(table.Indices)),
+		Idx:  make([]*schema.Index, len(table.Indices)),
 	}
 
-	sort.Slice(columns, func(i, j int) bool {
-		return indices[i] < indices[j]
-	})
-
-	for _, row := range rows {
-		sort.Slice(row, func(i, j int) bool {
-			return indices[i] < indices[j]
-		})
+	for i, indexDef := range table.Indices {
+		indices.Idx[i] = indexDef
+		key := result[i]
+		switch k := key.(type) {
+		case int64:
+			indices.Keys[i] = sdb.NewInt64IndexKey(k)
+		default:
+			indices.Keys[i] = sdb.NewStringIndexKey(k.(string))
+		}
 	}
 
-	return rows, columns
+	return result, indices
 }
