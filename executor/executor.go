@@ -29,9 +29,8 @@ func (e *Executor) execCreateTable(plan *planner.CreateTablePlan) (*sdb.Result, 
 	return &sdb.Result{RS: &sdb.ResultSet{Message: "table is successfully created"}}, nil
 }
 
-// WIP
 func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {
-	for _, v := range plan.Values {
+	for i, v := range plan.Values {
 		tuple := engine.NewTuple(v, plan.Table.PrimaryKeyIndex)
 
 		// put in the table
@@ -40,8 +39,9 @@ func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {
 		}
 
 		// save tuple in index
-		for _, index := range plan.Indices {
-			if err := e.engine.InsertIndex(plan.Table.Name, index.Idx.Name, index.Key, tuple); err != nil {
+		indices := plan.Indices[i]
+		for j := range indices.Keys {
+			if err := e.engine.InsertIndex(plan.Table.Name, indices.Idx[j].Name, indices.Keys[j], tuple); err != nil {
 				return nil, err
 			}
 		}
