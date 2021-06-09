@@ -158,6 +158,9 @@ func (p *lexer) lexInsertStmt() *InsertStatement {
 	}
 }
 
+func (l *lexer) lexSelectStatement() *SelectStatement {
+}
+
 func (l *lexer) lex() (stmt sdb.Statement, err error) {
 	// lex() uses panic/recover for non-local exits purpose.
 	// Usually they should not be used, but chaining error return significantly drops the readability.
@@ -180,8 +183,8 @@ func (l *lexer) lex() (stmt sdb.Statement, err error) {
 		return l.lexCreateTableStmt(), nil
 	case l.consume(INSERT):
 		return l.lexInsertStmt(), nil
-	// case p.consume(SELECT):
-	// 	return p.parseSelectStmt(), nil
+	case l.consume(SELECT):
+		return l.lexSelectStmt(), nil
 	default:
 		return nil, fmt.Errorf("unexpected leading token")
 	}
