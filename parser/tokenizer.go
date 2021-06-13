@@ -11,6 +11,13 @@ const (
 	FROM   = "FROM"
 	WHERE  = "WHERE"
 	AND    = "AND"
+	LEFT   = "LEFT"
+	JOIN   = "JOIN"
+	ON     = "ON"
+	ORDER  = "ORDER"
+	BY     = "BY"
+	LIMIT  = "LIMIT"
+	OFFSET = "OFFSET"
 
 	CREATE = "CREATE"
 	TABLE  = "TABLE"
@@ -35,7 +42,12 @@ const (
 	LPAREN   = "LPAREN" // (
 	RPAREN   = "RPAREN" // )
 	COMMA    = "COMMA"
-	EQ       = "EQ"
+	EQ       = "="
+	LT       = "<"
+	LTE      = "<="
+	GT       = ">"
+	GTE      = ">="
+	NEQ      = "<>"
 	ASTERISK = "ASTERISK"
 )
 
