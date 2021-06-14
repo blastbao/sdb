@@ -158,7 +158,7 @@ func (p *lexer) lexInsertStmt() *InsertStatement {
 	}
 }
 
-func (l *lexer) lexSelectStatement() *SelectStatement {
+func (l *lexer) lexSelectStmt() *SelectStatement {
 }
 
 func (l *lexer) lex() (stmt sdb.Statement, err error) {
