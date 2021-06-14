@@ -1,5 +1,9 @@
 package planner
 
+type LogicalPlan interface {
+	isLogicalPlan()
+}
+
 type Expr interface {
 	isExpr()
 }
@@ -16,6 +20,8 @@ type Column struct {
 
 // Projection is a Projection relational algebra operator.
 type Projection struct {
+	LogicalPlan
+
 	// Columns is a set of column to be picked up.
 	Columns []*Column
 	// Input is a source of data from which this Projection picks data.

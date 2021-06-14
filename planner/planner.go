@@ -23,6 +23,8 @@ func (p *Planner) Plan(stmt sdb.Statement) (sdb.Plan, error) {
 		return p.PlanCreateTable(s), nil
 	case *parser.InsertStatement:
 		return p.PlanInsert(s), nil
+	case *parser.SelectStatement:
+		return p.PlanSelect(s), nil
 	}
 
 	return nil, fmt.Errorf("unknown statement")
