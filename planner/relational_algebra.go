@@ -1,5 +1,7 @@
 package planner
 
+import "github.com/dty1er/sdb/parser"
+
 type LogicalPlan interface {
 	isLogicalPlan()
 }
@@ -8,8 +10,10 @@ type Expr interface {
 	isExpr()
 }
 
-type List interface {
-	isList()
+type NumberExpr struct {
+	Expr
+
+	Value int
 }
 
 type Column struct {
@@ -28,13 +32,40 @@ type Projection struct {
 	Input List
 }
 
+type Limit struct {
+	LogicalPlan
+
+	Limit Expr
+	Input List
+}
+
+type List interface {
+	isList()
+}
+
 type Table struct {
 	List
+
 	Name  string
 	Alias string
 }
 
 type Scan struct {
 	List
+
 	Table List
+}
+
+type Offset struct {
+	List
+
+	Offset Expr
+	Input  List
+}
+
+func (p *Planner) planSelectExpr(expr parser.SelectExpr) (Expr, error) {
+	switch expr.(type) {
+	case *parser.StarExpr:
+	case *parser.AliasedExpr:
+	}
 }
