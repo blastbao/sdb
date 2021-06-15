@@ -16,26 +16,44 @@ func newLexer(tokens []*token) *lexer {
 	return &lexer{tokens: tokens}
 }
 
-func (p *lexer) consume(tk tokenKind) bool {
-	if p.index >= len(p.tokens) {
+func (l *lexer) consume(tk tokenKind) bool {
+	if l.index >= len(l.tokens) {
 		return false
 	}
 
-	if p.tokens[p.index].Kind == tk {
-		p.index++
+	if l.tokens[l.index].Kind == tk {
+		l.index++
 		return true
 	}
 
 	return false
 }
 
-func (p *lexer) mustBeType() *token {
+func (l *lexer) Atoi(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (l *lexer) mustBeStringVal() *token {
+	cur := l.tokens[l.index]
+	if cur.Kind != STRING_VAL {
+		panic(fmt.Sprintf("String value is expected but got %v", cur.Kind))
+	}
+
+	l.index++
+	return cur
+}
+
+func (l *lexer) mustBeType() *token {
 	types := []tokenKind{BOOL, INT64, FLOAT64, BYTES, STRING, TIMESTAMP}
-	cur := p.tokens[p.index]
+	cur := l.tokens[l.index]
 
 	for _, typ := range types {
 		if cur.Kind == typ {
-			p.index++
+			l.index++
 			return cur
 		}
 	}
@@ -43,11 +61,11 @@ func (p *lexer) mustBeType() *token {
 	panic(fmt.Sprintf("any type is expected but got %v", cur.Kind))
 }
 
-func (p *lexer) mustBeOr(ks ...tokenKind) *token {
-	cur := p.tokens[p.index]
+func (l *lexer) mustBeOr(ks ...tokenKind) *token {
+	cur := l.tokens[l.index]
 	for _, k := range ks {
 		if cur.Kind == k {
-			p.index++
+			l.index++
 			return cur
 		}
 	}
@@ -55,46 +73,48 @@ func (p *lexer) mustBeOr(ks ...tokenKind) *token {
 	panic(fmt.Sprintf("one of %v is expected but got %v", ks, cur.Kind))
 }
 
-func (p *lexer) mustBe(k tokenKind) *token {
-	cur := p.tokens[p.index]
+func (l *lexer) mustBe(k tokenKind) *token {
+	cur := l.tokens[l.index]
 	if cur.Kind != k {
+		// lexer uses panic because returning error makes the code complicated.
+		// It must be recovered on caller side.
 		panic(fmt.Sprintf("%v is expected but got %v", k, cur.Kind))
 	}
 
-	p.index++
+	l.index++
 	return cur
 }
 
-func (p *lexer) lexCreateTableStmt() *CreateTableStatement {
-	p.mustBe(TABLE)
-	tbl := p.mustBe(STRING_VAL)
-	p.mustBe(LPAREN)
+func (l *lexer) lexCreateTableStmt() *CreateTableStatement {
+	l.mustBe(TABLE)
+	tbl := l.mustBe(STRING_VAL)
+	l.mustBe(LPAREN)
 
 	var columns, types []string
 	pk := ""
 	for {
-		column := p.mustBe(STRING_VAL)
-		typ := p.mustBeType()
+		column := l.mustBe(STRING_VAL)
+		typ := l.mustBeType()
 
 		columns = append(columns, column.Val)
 		types = append(types, typ.Kind.String())
 
-		if p.consume(PRIMARY) {
+		if l.consume(PRIMARY) {
 			if pk != "" {
 				panic(fmt.Sprintf("composite primary key is not implemented as of now"))
 			}
 
-			p.mustBe(KEY)
+			l.mustBe(KEY)
 			pk = column.Val
 		}
 
-		if !p.consume(COMMA) {
+		if !l.consume(COMMA) {
 			break
 		}
 	}
 
-	p.mustBe(RPAREN)
-	p.mustBe(EOF)
+	l.mustBe(RPAREN)
+	l.mustBe(EOF)
 
 	return &CreateTableStatement{
 		Table:         tbl.Val,
@@ -104,52 +124,52 @@ func (p *lexer) lexCreateTableStmt() *CreateTableStatement {
 	}
 }
 
-func (p *lexer) lexInsertStmt() *InsertStatement {
-	p.mustBe(INTO)
-	tbl := p.mustBe(STRING_VAL)
+func (l *lexer) lexInsertStmt() *InsertStatement {
+	l.mustBe(INTO)
+	tbl := l.mustBe(STRING_VAL)
 
 	columns := []string{}
-	if p.consume(LPAREN) {
+	if l.consume(LPAREN) {
 		// insert with columns e.g. insert into users (id, name) values ...
 		for {
-			column := p.mustBe(STRING_VAL)
+			column := l.mustBe(STRING_VAL)
 			columns = append(columns, column.Val)
 
-			if !p.consume(COMMA) {
+			if !l.consume(COMMA) {
 				break
 			}
 		}
 
-		p.mustBe(RPAREN)
+		l.mustBe(RPAREN)
 
 	}
 
-	p.mustBe(VALUES)
+	l.mustBe(VALUES)
 
 	rows := [][]string{}
 	for { // for-loop to read multiple rows
-		p.mustBe(LPAREN)
+		l.mustBe(LPAREN)
 
 		values := []string{}
 		for { // for-loop to read multiple values in a row
-			val := p.mustBeOr(STRING_VAL, NUMBER_VAL)
+			val := l.mustBeOr(STRING_VAL, NUMBER_VAL)
 			values = append(values, val.Val)
 
-			if !p.consume(COMMA) {
+			if !l.consume(COMMA) {
 				break
 			}
 		}
 
-		p.mustBe(RPAREN)
+		l.mustBe(RPAREN)
 
 		rows = append(rows, values)
 
-		if !p.consume(COMMA) {
+		if !l.consume(COMMA) {
 			break
 		}
 	}
 
-	p.mustBe(EOF)
+	l.mustBe(EOF)
 
 	return &InsertStatement{
 		Table:   tbl.Val,
@@ -160,7 +180,7 @@ func (p *lexer) lexInsertStmt() *InsertStatement {
 
 func (l *lexer) lex() (stmt sdb.Statement, err error) {
 	// lex() uses panic/recover for non-local exits purpose.
-	// Usually they should not be used, but chaining error return significantly drops the readability.
+	// Usually they are not recommended to be used, but chaining error return significantly drops the readability.
 	defer func() {
 		if r := recover(); r != nil {
 			stmt = nil
