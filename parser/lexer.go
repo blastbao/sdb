@@ -30,12 +30,32 @@ func (l *lexer) consume(tk tokenKind) bool {
 	return false
 }
 
-func (l *lexer) Atoi(s string) int {
+func (l *lexer) atoi(s string) int {
 	i, err := strconv.Atoi(s)
 	if err != nil {
 		panic(err)
 	}
 	return i
+}
+
+func (l *lexer) mustBeStringOrNumberVal() *token {
+	cur := l.tokens[l.index]
+	if cur.Kind != STRING_VAL && cur.Kind != NUMBER_VAL {
+		panic(fmt.Sprintf("String value is expected but got %v", cur.Kind))
+	}
+
+	l.index++
+	return cur
+}
+
+func (l *lexer) mustBeNumberVal() *token {
+	cur := l.tokens[l.index]
+	if cur.Kind != NUMBER_VAL {
+		panic(fmt.Sprintf("String value is expected but got %v", cur.Kind))
+	}
+
+	l.index++
+	return cur
 }
 
 func (l *lexer) mustBeStringVal() *token {
@@ -46,6 +66,20 @@ func (l *lexer) mustBeStringVal() *token {
 
 	l.index++
 	return cur
+}
+
+func (l *lexer) mustBeOperator() *token {
+	types := []tokenKind{EQ, NEQ, LT, LTE, GT, GTE}
+	cur := l.tokens[l.index]
+
+	for _, typ := range types {
+		if cur.Kind == typ {
+			l.index++
+			return cur
+		}
+	}
+
+	panic(fmt.Sprintf("any operator is expected but got %v", cur.Kind))
 }
 
 func (l *lexer) mustBeType() *token {

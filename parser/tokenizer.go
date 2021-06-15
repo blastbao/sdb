@@ -1,106 +1,130 @@
 package parser
 
-import "strings"
-
-type tokenKind string
-
-const (
-	EOF tokenKind = "EOF"
-
-	SELECT   = "SELECT"
-	DISTINCT = "DISTINCT"
-	AS       = "AS"
-	FROM     = "FROM"
-	WHERE    = "WHERE"
-	AND      = "AND"
-	OR       = "OR"
-	LEFT     = "LEFT"
-	JOIN     = "JOIN"
-	ON       = "ON"
-	ORDER    = "ORDER"
-	BY       = "BY"
-	ASC      = "ASC"
-	DESC     = "DESC"
-	LIMIT    = "LIMIT"
-	OFFSET   = "OFFSET"
-
-	CREATE = "CREATE"
-	TABLE  = "TABLE"
-
-	INSERT = "INSERT"
-	INTO   = "INTO"
-	VALUES = "VALUES"
-
-	PRIMARY = "PRIMARY"
-	KEY     = "KEY"
-
-	BOOL      = "BOOL"
-	INT64     = "INT64"
-	FLOAT64   = "FLOAT64"
-	BYTES     = "BYTES"
-	STRING    = "STRING"
-	TIMESTAMP = "TIMESTAMP"
-
-	STRING_VAL = "STRING_VAL"
-	NUMBER_VAL = "NUMBER_VAL"
-
-	LPAREN   = "LPAREN" // (
-	RPAREN   = "RPAREN" // )
-	COMMA    = "COMMA"
-	EQ       = "="
-	LT       = "<"
-	LTE      = "<="
-	GT       = ">"
-	GTE      = ">="
-	NEQ      = "<>"
-	ASTERISK = "ASTERISK"
+import (
+	"sort"
+	"strings"
 )
 
-var Keywords = map[string]tokenKind{
-	"select":    SELECT,
-	"as":        AS,
-	"distinct":  DISTINCT,
-	"from":      FROM,
-	"where":     WHERE,
-	"and":       AND,
-	"or":        OR,
-	"left":      LEFT,
-	"join":      JOIN,
-	"on":        ON,
-	"order":     ORDER,
-	"by":        BY,
-	"asc":       ASC,
-	"desc":      DESC,
-	"limit":     LIMIT,
-	"offset":    OFFSET,
-	"create":    CREATE,
-	"table":     TABLE,
-	"insert":    INSERT,
-	"into":      INTO,
-	"values":    VALUES,
-	"primary":   PRIMARY,
-	"key":       KEY,
-	"bool":      BOOL,
-	"int64":     INT64,
-	"float64":   FLOAT64,
-	"bytes":     BYTES,
-	"string":    STRING,
-	"timestamp": TIMESTAMP,
-	"(":         LPAREN,
-	")":         RPAREN,
-	",":         COMMA,
-	"=":         EQ,
-	"<":         LT,
-	"<=":        LTE,
-	">":         GT,
-	">=":        GTE,
-	"<>":        NEQ,
-	"*":         ASTERISK,
-	";":         EOF,
+type keyword struct {
+	s  string
+	tk tokenKind
 }
 
+type tokenKind uint8
+
+const (
+	EOF tokenKind = iota + 1
+
+	SELECT
+	DISTINCT
+	AS
+	FROM
+	WHERE
+	AND
+	OR
+	LEFT
+	JOIN
+	ON
+	ORDER
+	BY
+	ASC
+	DESC
+	LIMIT
+	OFFSET
+
+	CREATE
+	TABLE
+
+	INSERT
+	INTO
+	VALUES
+
+	PRIMARY
+	KEY
+
+	BOOL
+	INT64
+	FLOAT64
+	BYTES
+	STRING
+	TIMESTAMP
+
+	STRING_VAL
+	NUMBER_VAL
+
+	LPAREN
+	RPAREN
+	COMMA
+	EQ
+	LT
+	LTE
+	GT
+	GTE
+	NEQ
+	ASTERISK
+)
+
 func (tk tokenKind) String() string {
-	return string(tk)
+	for _, kw := range keywords {
+		if kw.tk == tk {
+			return kw.s
+		}
+	}
+
+	// must not come here
+	return ""
+}
+
+var keywords = []*keyword{
+	{s: "select", tk: SELECT},
+	{s: "as", tk: AS},
+	{s: "distinct", tk: DISTINCT},
+	{s: "from", tk: FROM},
+	{s: "where", tk: WHERE},
+	{s: "and", tk: AND},
+	{s: "or", tk: OR},
+	{s: "left", tk: LEFT},
+	{s: "join", tk: JOIN},
+	{s: "on", tk: ON},
+	{s: "order", tk: ORDER},
+	{s: "by", tk: BY},
+	{s: "asc", tk: ASC},
+	{s: "desc", tk: DESC},
+	{s: "limit", tk: LIMIT},
+	{s: "offset", tk: OFFSET},
+	{s: "create", tk: CREATE},
+	{s: "table", tk: TABLE},
+	{s: "insert", tk: INSERT},
+	{s: "into", tk: INTO},
+	{s: "values", tk: VALUES},
+	{s: "primary", tk: PRIMARY},
+	{s: "key", tk: KEY},
+	{s: "bool", tk: BOOL},
+	{s: "int64", tk: INT64},
+	{s: "float64", tk: FLOAT64},
+	{s: "bytes", tk: BYTES},
+	{s: "string", tk: STRING},
+	{s: "timestamp", tk: TIMESTAMP},
+	{s: "(", tk: LPAREN},
+	{s: ")", tk: RPAREN},
+	{s: ",", tk: COMMA},
+	{s: "=", tk: EQ},
+	{s: "<", tk: LT},
+	{s: "<=", tk: LTE},
+	{s: ">", tk: GT},
+	{s: ">=", tk: GTE},
+	{s: "<>", tk: NEQ},
+	{s: "*", tk: ASTERISK},
+	{s: ";", tk: EOF},
+}
+
+func sortKeywords() []*keyword {
+	k := keywords
+	sort.Slice(k, func(i, j int) bool {
+		return k[j].s < k[i].s
+	})
+
+	return k
 }
 
 type token struct {
@@ -211,9 +235,9 @@ func (t *tokenizer) tokenize() []*token {
 		t.skipSpaces()
 
 		found := false
-		for kw, tk := range Keywords {
-			if t.match(kw) {
-				tokens = append(tokens, &token{Kind: tk})
+		for _, kw := range sortKeywords() {
+			if t.match(kw.s) {
+				tokens = append(tokens, &token{Kind: kw.tk})
 				found = true
 				break
 			}

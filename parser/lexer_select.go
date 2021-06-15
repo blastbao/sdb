@@ -124,13 +124,13 @@ type SelectStatement struct {
 
 func (l *lexer) lexComparisonExpr() Expr {
 	left := l.mustBeStringVal()
-	op := l.mustBeStringVal()
-	right := l.mustBeStringVal()
+	op := l.mustBeOperator()
+	right := l.mustBeStringOrNumberVal()
 	c := &ComparisonExpr{
 		Left:  &ColName{Name: left.Val},
 		Right: &Value{Val: right.Val},
 	}
-	switch op.Val {
+	switch op.Kind {
 	case EQ:
 		c.Operator = Op_EQ
 	case NEQ:
@@ -161,10 +161,10 @@ func (l *lexer) lexSelectStmt() *SelectStatement {
 		// FUTURE WORK: support column with qualifier (e.g. SELECT mytable.* or mytable.id)
 		case l.consume(ASTERISK):
 			stmt.SelectExprs = append(stmt.SelectExprs, &StarExpr{})
-		case l.consume(STRING_VAL):
+		default:
 			sv := l.mustBeStringVal()
 			e := &AliasedExpr{
-				Expr: ColName{Name: sv.Val},
+				Expr: &ColName{Name: sv.Val},
 			}
 			if l.consume(AS) {
 				sv := l.mustBeStringVal()
@@ -191,26 +191,9 @@ func (l *lexer) lexSelectStmt() *SelectStatement {
 
 	if l.consume(WHERE) {
 		w := &Where{}
-		for {
-			// TODO: This can only parse very simple where expression.
-			// Probably should use yacc to parse more complicated query
-			e := l.lexComparisonExpr()
-
-			if l.consume(AND) {
-				stmt.Where.Expr = &AndExpr{
-					Left:  e,
-					Right: l.lexComparisonExpr(),
-				}
-			} else if l.consume(OR) {
-				stmt.Where.Expr = &OrExpr{
-					Left:  e,
-					Right: l.lexComparisonExpr(),
-				}
-			} else {
-				stmt.Where.Expr = e
-				break
-			}
-		}
+		// TODO: Right now it can use only 1 comparison operator as where expression
+		e := l.lexComparisonExpr()
+		w.Expr = e
 		stmt.Where = w
 	}
 
@@ -243,21 +226,21 @@ func (l *lexer) lexSelectStmt() *SelectStatement {
 	if l.consume(LIMIT) {
 		offset := "0"
 		limit := "0"
-		offsetOrLimit := l.mustBeStringVal()
+		offsetOrLimit := l.mustBeNumberVal()
 		if l.consume(COMMA) {
 			// In case "LIMIT 2, 5", offset is 2, limit is 5
 			offset = offsetOrLimit.Val
-			limit = l.mustBeStringVal().Val
+			limit = l.mustBeNumberVal().Val
 		} else if l.consume(OFFSET) {
 			// In case "LIMIT 2 OFFSET 5", offset is 5, limit is 2
 			limit = offsetOrLimit.Val
-			offset = l.mustBeStringVal().Val
+			offset = l.mustBeNumberVal().Val
 		} else {
 			// Just "LIMIT 2", without offset; offset is 0 by default
 			limit = offsetOrLimit.Val
 		}
 
-		stmt.Limit = &Limit{Offset: l.Atoi(offset), Count: l.Atoi(limit)}
+		stmt.Limit = &Limit{Offset: l.atoi(offset), Count: l.atoi(limit)}
 	}
 
 	return stmt

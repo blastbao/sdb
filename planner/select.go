@@ -21,9 +21,9 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 	// create the desired result set.
 	// In second phase, some optimizations are applied to the logical plan to get better performance.
 	// For example, it can convert a logical plan "scan `mytable`" to use index.
-	tableDef := p.catalog.GetTable(stmt.Table)
+	// tableDef := p.catalog.GetTable(stmt.Table)
 
-	logicalPlan := &Projection{}
+	// logicalPlan := &Projection{}
 
 	return &SelectPlan{}
 }
