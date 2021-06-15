@@ -51,6 +51,44 @@ const (
 	ASTERISK = "ASTERISK"
 )
 
+var Keywords = map[string]tokenKind{
+	"select":    SELECT,
+	"from":      FROM,
+	"where":     WHERE,
+	"and":       AND,
+	"left":      LEFT,
+	"join":      JOIN,
+	"on":        ON,
+	"order":     ORDER,
+	"by":        BY,
+	"limit":     LIMIT,
+	"offset":    OFFSET,
+	"create":    CREATE,
+	"table":     TABLE,
+	"insert":    INSERT,
+	"into":      INTO,
+	"values":    VALUES,
+	"primary":   PRIMARY,
+	"key":       KEY,
+	"bool":      BOOL,
+	"int64":     INT64,
+	"float64":   FLOAT64,
+	"bytes":     BYTES,
+	"string":    STRING,
+	"timestamp": TIMESTAMP,
+	"(":         LPAREN,
+	")":         RPAREN,
+	",":         COMMA,
+	"=":         EQ,
+	"<":         LT,
+	"<=":        LTE,
+	">":         GT,
+	">=":        GTE,
+	"<>":        NEQ,
+	"*":         ASTERISK,
+	";":         EOF,
+}
+
 func (tk tokenKind) String() string {
 	return string(tk)
 }
@@ -162,56 +200,20 @@ func (t *tokenizer) tokenize() []*token {
 	for t.pos = 0; t.pos < len(t.query); {
 		t.skipSpaces()
 
+		found := false
+		for kw, tk := range Keywords {
+			if t.match(kw) {
+				tokens = append(tokens, &token{Kind: tk})
+				found = true
+				break
+			}
+		}
+
+		if found {
+			continue
+		}
+
 		switch {
-		case t.match("select"):
-			tokens = append(tokens, &token{Kind: SELECT})
-		case t.match("from"):
-			tokens = append(tokens, &token{Kind: FROM})
-		case t.match("where"):
-			tokens = append(tokens, &token{Kind: WHERE})
-		case t.match("and"):
-			tokens = append(tokens, &token{Kind: AND})
-		case t.match("create"):
-			tokens = append(tokens, &token{Kind: CREATE})
-		case t.match("table"):
-			tokens = append(tokens, &token{Kind: TABLE})
-		case t.match("insert"):
-			tokens = append(tokens, &token{Kind: INSERT})
-		case t.match("into"):
-			tokens = append(tokens, &token{Kind: INTO})
-		case t.match("values"):
-			tokens = append(tokens, &token{Kind: VALUES})
-		case t.match("primary"):
-			tokens = append(tokens, &token{Kind: PRIMARY})
-		case t.match("key"):
-			tokens = append(tokens, &token{Kind: KEY})
-
-		case t.match("("):
-			tokens = append(tokens, &token{Kind: LPAREN})
-		case t.match(")"):
-			tokens = append(tokens, &token{Kind: RPAREN})
-		case t.match(","):
-			tokens = append(tokens, &token{Kind: COMMA})
-		case t.match("="):
-			tokens = append(tokens, &token{Kind: EQ})
-		case t.match("*"):
-			tokens = append(tokens, &token{Kind: ASTERISK})
-		case t.match(";"):
-			tokens = append(tokens, &token{Kind: EOF})
-
-		case t.match("bool"):
-			tokens = append(tokens, &token{Kind: BOOL})
-		case t.match("int64"):
-			tokens = append(tokens, &token{Kind: INT64})
-		case t.match("float64"):
-			tokens = append(tokens, &token{Kind: FLOAT64})
-		case t.match("bytes"):
-			tokens = append(tokens, &token{Kind: BYTES})
-		case t.match("string"):
-			tokens = append(tokens, &token{Kind: STRING})
-		case t.match("timestamp"):
-			tokens = append(tokens, &token{Kind: TIMESTAMP})
-
 		case t.match(`"`):
 			s := t.scanQuotedStringVal()
 			tokens = append(tokens, &token{Kind: STRING_VAL, Val: s})

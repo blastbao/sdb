@@ -12,6 +12,14 @@ func TestTokenizer_Tokenize(t *testing.T) {
 		expected []*token
 	}{
 		{
+			query: `AAA BBB CCC`,
+			expected: []*token{
+				{Kind: STRING_VAL, Val: "AAA"},
+				{Kind: STRING_VAL, Val: "BBB"},
+				{Kind: STRING_VAL, Val: "CCC"},
+			},
+		},
+		{
 			query: "SELECT * FROM users WHERE id = 5;",
 			expected: []*token{
 				{Kind: SELECT},
@@ -42,6 +50,22 @@ func TestTokenizer_Tokenize(t *testing.T) {
 				{Kind: STRING_VAL, Val: "age"},
 				{Kind: EQ},
 				{Kind: NUMBER_VAL, Val: "25"},
+				{Kind: EOF},
+			},
+		},
+		{
+			query: `SELECT id, name FROM users WHERE name = "aaa;bbb";`,
+			expected: []*token{
+				{Kind: SELECT},
+				{Kind: STRING_VAL, Val: "id"},
+				{Kind: COMMA},
+				{Kind: STRING_VAL, Val: "name"},
+				{Kind: FROM},
+				{Kind: STRING_VAL, Val: "users"},
+				{Kind: WHERE},
+				{Kind: STRING_VAL, Val: "name"},
+				{Kind: EQ},
+				{Kind: STRING_VAL, Val: "aaa;bbb"},
 				{Kind: EOF},
 			},
 		},
