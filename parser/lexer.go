@@ -158,9 +158,6 @@ func (p *lexer) lexInsertStmt() *InsertStatement {
 	}
 }
 
-func (l *lexer) lexSelectStmt() *SelectStatement {
-}
-
 func (l *lexer) lex() (stmt sdb.Statement, err error) {
 	// lex() uses panic/recover for non-local exits purpose.
 	// Usually they should not be used, but chaining error return significantly drops the readability.

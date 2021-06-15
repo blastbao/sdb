@@ -13,14 +13,6 @@ type CreateTableStatement struct {
 	PrimaryKeyCol string
 }
 
-type SelectStatement struct {
-	sdb.Statement
-
-	Columns []string
-	Table   []string
-	// Conditions []Expression
-}
-
 type InsertStatement struct {
 	sdb.Statement
 
