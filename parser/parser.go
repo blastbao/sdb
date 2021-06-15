@@ -32,13 +32,22 @@ func New(catalog sdb.Catalog) *Parser {
 // Parse parses the given query to the statement.
 // It implements sdb.Parser interface.
 func (p *Parser) Parse(query string) (sdb.Statement, error) {
-	tokens := newTokenizer(query).tokenize()
-	stmt, err := newLexer(tokens).lex()
+	stmt, err := p.parse(query)
 	if err != nil {
 		return nil, err
 	}
 
 	if err := newValidator(stmt, p.catalog).validate(); err != nil {
+		return nil, err
+	}
+
+	return stmt, nil
+}
+
+func (p *Parser) parse(query string) (sdb.Statement, error) {
+	tokens := newTokenizer(query).tokenize()
+	stmt, err := newLexer(tokens).lex()
+	if err != nil {
 		return nil, err
 	}
 

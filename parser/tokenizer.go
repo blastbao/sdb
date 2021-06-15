@@ -7,17 +7,22 @@ type tokenKind string
 const (
 	EOF tokenKind = "EOF"
 
-	SELECT = "SELECT"
-	FROM   = "FROM"
-	WHERE  = "WHERE"
-	AND    = "AND"
-	LEFT   = "LEFT"
-	JOIN   = "JOIN"
-	ON     = "ON"
-	ORDER  = "ORDER"
-	BY     = "BY"
-	LIMIT  = "LIMIT"
-	OFFSET = "OFFSET"
+	SELECT   = "SELECT"
+	DISTINCT = "DISTINCT"
+	AS       = "AS"
+	FROM     = "FROM"
+	WHERE    = "WHERE"
+	AND      = "AND"
+	OR       = "OR"
+	LEFT     = "LEFT"
+	JOIN     = "JOIN"
+	ON       = "ON"
+	ORDER    = "ORDER"
+	BY       = "BY"
+	ASC      = "ASC"
+	DESC     = "DESC"
+	LIMIT    = "LIMIT"
+	OFFSET   = "OFFSET"
 
 	CREATE = "CREATE"
 	TABLE  = "TABLE"
@@ -53,14 +58,19 @@ const (
 
 var Keywords = map[string]tokenKind{
 	"select":    SELECT,
+	"as":        AS,
+	"distinct":  DISTINCT,
 	"from":      FROM,
 	"where":     WHERE,
 	"and":       AND,
+	"or":        OR,
 	"left":      LEFT,
 	"join":      JOIN,
 	"on":        ON,
 	"order":     ORDER,
 	"by":        BY,
+	"asc":       ASC,
+	"desc":      DESC,
 	"limit":     LIMIT,
 	"offset":    OFFSET,
 	"create":    CREATE,
