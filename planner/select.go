@@ -2,16 +2,13 @@ package planner
 
 import (
 	"github.com/dty1er/sdb/parser"
-	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/sdb"
 )
 
 type SelectPlan struct {
 	sdb.Plan
 
-	Table   *schema.Table
-	Indices []*Indices
-	Values  [][]interface{}
+	// Plan PhysicalPlan
 }
 
 // PlanSelect makes a plan to query data by given SELECT statement.
@@ -21,8 +18,27 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 	// create the desired result set.
 	// In second phase, some optimizations are applied to the logical plan to get better performance.
 	// For example, it can convert a logical plan "scan `mytable`" to use index.
-	// tableDef := p.catalog.GetTable(stmt.Table)
+	// We call optimizations-applied plan "physical plan".
 
+	var lp LogicalPlan
+
+	cols := []*Column{}
+	for _, se := range stmt.SelectExprs {
+		switch se.(type) {
+		case parser.StarExpr:
+		case parser.AliasedExpr:
+		}
+	}
+
+	switch {
+	case stmt.Limit != nil:
+		l := &Limit{
+			Limit: &NumberExpr{Value: stmt.Limit.Count},
+			Input: &Offset{
+				Offset: stmt.Limit.Offset,
+			},
+		}
+	}
 	// logicalPlan := &Projection{}
 
 	return &SelectPlan{}
