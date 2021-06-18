@@ -101,6 +101,14 @@ const (
 	OrderDirection_DESC
 )
 
+func (od OrderDirection) String() string {
+	if od == OrderDirection_DESC {
+		return "desc"
+	}
+
+	return "asc"
+}
+
 type Order struct {
 	Expr      Expr
 	Direction OrderDirection
