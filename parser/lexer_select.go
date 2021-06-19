@@ -124,7 +124,7 @@ type SelectStatement struct {
 
 	Distinct    bool
 	SelectExprs []SelectExpr
-	From        []TableExpr
+	From        TableExpr
 	Where       *Where
 	OrderBy     []*Order
 	Limit       *Limit
@@ -191,11 +191,8 @@ func (l *lexer) lexSelectStmt() *SelectStatement {
 
 	l.mustBe(FROM)
 
-	stmt.From = []TableExpr{}
-
 	sv := l.mustBeStringVal()
-	table := &AliasedTableExpr{Expr: &TableName{Name: sv.Val}}
-	stmt.From = append(stmt.From, table)
+	stmt.From = &AliasedTableExpr{Expr: &TableName{Name: sv.Val}}
 
 	if l.consume(WHERE) {
 		w := &Where{}
