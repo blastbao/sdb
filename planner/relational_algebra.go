@@ -1,7 +1,5 @@
 package planner
 
-import "github.com/dty1er/sdb/parser"
-
 type LogicalPlan interface {
 	isLogicalPlan()
 }
@@ -63,9 +61,4 @@ type Offset struct {
 	Input  List
 }
 
-func (p *Planner) planSelectExpr(expr parser.SelectExpr) (Expr, error) {
-	switch expr.(type) {
-	case *parser.StarExpr:
-	case *parser.AliasedExpr:
-	}
 }
