@@ -1,6 +1,8 @@
 package planner
 
 type LogicalPlan interface {
+	List
+
 	isLogicalPlan()
 }
 
