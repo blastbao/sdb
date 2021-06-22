@@ -16,6 +16,12 @@ type NumberExpr struct {
 	Value int
 }
 
+type LiteralExpr struct {
+	Expr
+
+	Value string
+}
+
 type Scan struct {
 	LogicalPlan
 
@@ -47,6 +53,14 @@ type Limit struct {
 	Input List
 }
 
+type OrderBy struct {
+	LogicalPlan
+
+	Columns     []Expr
+	Directirons []string
+	Input       List
+}
+
 type List interface {
 	isList()
 }
@@ -65,4 +79,20 @@ type Offset struct {
 	Input  List
 }
 
+type Filter interface {
+	isFilter()
+}
+
+type EqualityFilter struct {
+	Filter
+
+	Column Expr
+	Value  interface{}
+}
+
+type Selection struct {
+	LogicalPlan
+
+	Filter Filter
+	Input  List
 }
