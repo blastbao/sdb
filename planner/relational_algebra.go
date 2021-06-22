@@ -16,6 +16,12 @@ type NumberExpr struct {
 	Value int
 }
 
+type Scan struct {
+	LogicalPlan
+
+	Table *Table
+}
+
 type Column struct {
 	Table string
 	Name  string // TODO: This should be Expr because it can be function, operation, etc.
@@ -48,12 +54,6 @@ type Table struct {
 
 	Name  string
 	Alias string
-}
-
-type Scan struct {
-	List
-
-	Table List
 }
 
 type Offset struct {
