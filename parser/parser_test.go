@@ -129,11 +129,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 			},
@@ -146,11 +144,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&AliasedExpr{Expr: &ColName{Name: "id"}},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 			},
@@ -163,11 +159,9 @@ func TestParser_parse_Select(t *testing.T) {
 					&AliasedExpr{Expr: &ColName{Name: "id"}},
 					&AliasedExpr{Expr: &ColName{Name: "name"}},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 			},
@@ -180,11 +174,9 @@ func TestParser_parse_Select(t *testing.T) {
 					&AliasedExpr{Expr: &ColName{Name: "id"}},
 					&AliasedExpr{Expr: &ColName{Name: "name"}, As: "n"},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 			},
@@ -196,11 +188,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				Where: &Where{
@@ -223,11 +213,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				Where: &Where{
@@ -250,11 +238,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				OrderBy: []*Order{
@@ -272,11 +258,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				OrderBy: []*Order{
@@ -294,11 +278,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				OrderBy: []*Order{
@@ -320,11 +302,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				OrderBy: []*Order{
@@ -346,11 +326,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				Limit: &Limit{
@@ -366,11 +344,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				Limit: &Limit{
@@ -386,11 +362,9 @@ func TestParser_parse_Select(t *testing.T) {
 				SelectExprs: []SelectExpr{
 					&StarExpr{},
 				},
-				From: []TableExpr{
-					&AliasedTableExpr{
-						Expr: &TableName{
-							Name: "users",
-						},
+				From: &AliasedTableExpr{
+					Expr: &TableName{
+						Name: "users",
 					},
 				},
 				Limit: &Limit{
