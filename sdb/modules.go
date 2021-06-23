@@ -31,6 +31,7 @@ type Planner interface {
 type Catalog interface {
 	GetTable(table string) *schema.Table
 	AddTable(table string, columns []*schema.ColumnDef, indices []*schema.Index) error
+	GetColumnDef(table string, column string) (*schema.ColumnDef, error)
 	FindTable(table string) bool
 	ListIndices() []*schema.Index
 	Persist() error
