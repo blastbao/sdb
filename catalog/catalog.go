@@ -59,6 +59,25 @@ func (c *Catalog) AddTable(table string, columns []*schema.ColumnDef, indices []
 	return nil
 }
 
+func (c *Catalog) GetColumnDef(table string, column string) (*schema.ColumnDef, error) {
+	c.latch.Lock()
+	defer c.latch.Unlock()
+
+	if !c.FindTable(table) {
+		return nil, fmt.Errorf("table %s is not found", table)
+	}
+
+	t := c.GetTable(table)
+
+	for _, colDef := range t.Columns {
+		if colDef.Name == column {
+			return colDef, nil
+		}
+	}
+
+	return nil, fmt.Errorf("column %s is not found in table %s", column, table)
+}
+
 func (c *Catalog) FindTable(table string) bool {
 	_, ok := c.Tables[table]
 	return ok

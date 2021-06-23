@@ -1,7 +1,10 @@
 package planner
 
 import (
+	"time"
+
 	"github.com/dty1er/sdb/parser"
+	"github.com/dty1er/sdb/schema"
 	"github.com/dty1er/sdb/sdb"
 )
 
@@ -44,32 +47,35 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 		}
 		col := ce.Left.(*parser.ColName)
 		val := ce.Right.(*parser.Value)
-		s := &Selection{Filter: &EqualityFilter{
+		f := &EqualityFilter{
 			Column: &Column{Name: col.Name},
-			Value:  &LiteralExpr{Value: val.Val},
-		}}
+		}
 
-		s.Input = sc
+		colDef, _ := p.catalog.GetColumnDef(tbl.Name, col.Name)
+		switch colDef.Type {
+		case schema.ColumnTypeBool:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeBool)
+			f.Value = &BoolExpr{Value: v.(bool)}
+		case schema.ColumnTypeInt64:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeInt64)
+			f.Value = &Int64Expr{Value: v.(int64)}
+		case schema.ColumnTypeFloat64:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeFloat64)
+			f.Value = &Float64Expr{Value: v.(float64)}
+		case schema.ColumnTypeBytes:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeBytes)
+			f.Value = &BytesExpr{Value: v.([]byte)}
+		case schema.ColumnTypeString:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeString)
+			f.Value = &StringExpr{Value: v.(string)}
+		case schema.ColumnTypeTimestamp:
+			v, _ := schema.ConvertValue(val.Val, schema.ColumnTypeTimestamp)
+			f.Value = &TimestampExpr{Value: v.(time.Time)}
+		}
+
+		s := &Selection{Filter: f, Input: sc}
 		lp = s
 	}
-
-	// plan columns (projection)
-	pj := &Projection{Columns: []Expr{}}
-	for _, se := range stmt.SelectExprs {
-		switch s := se.(type) {
-		case parser.StarExpr:
-			for _, colDef := range p.catalog.GetTable(tbl.Name).Columns {
-				pj.Columns = append(pj.Columns, &Column{Table: tbl.Name, Name: colDef.Name, Alias: colDef.Name})
-			}
-			// when * is specified, no other column should be placed
-			break
-		case parser.AliasedExpr:
-			c := s.Expr.(*parser.ColName)
-			pj.Columns = append(pj.Columns, &Column{Table: tbl.Name, Name: c.Name, Alias: s.As})
-		}
-	}
-
-	pj.Input = lp
 
 	// plan order by
 	if stmt.OrderBy != nil {
