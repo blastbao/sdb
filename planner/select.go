@@ -95,14 +95,32 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 
 	// plan limit
 	if stmt.Limit != nil {
-		l := &Limit{
-			Limit: &NumberExpr{Value: stmt.Limit.Count},
-			Input: &Offset{Offset: &NumberExpr{Value: stmt.Limit.Offset}},
-		}
+		l := &Limit{Limit: &Int64Expr{Value: int64(stmt.Limit.Count)}}
+		o := &Offset{Offset: &Int64Expr{Value: int64(stmt.Limit.Offset)}}
 
-		l.Input = lp
+		o.Input = lp
+		l.Input = o
 		lp = l
 	}
+
+	// plan columns (projection)
+	pj := &Projection{Columns: []Expr{}}
+	for _, se := range stmt.SelectExprs {
+		switch s := se.(type) {
+		case *parser.StarExpr:
+			for _, colDef := range p.catalog.GetTable(tbl.Name).Columns {
+				pj.Columns = append(pj.Columns, &Column{Table: tbl.Name, Name: colDef.Name, Alias: colDef.Name})
+			}
+			// when * is specified, no other column should be placed
+			break
+		case *parser.AliasedExpr:
+			c := s.Expr.(*parser.ColName)
+			pj.Columns = append(pj.Columns, &Column{Table: tbl.Name, Name: c.Name, Alias: s.As})
+		}
+	}
+
+	pj.Input = lp
+	lp = pj
 
 	optimizations := []Optimization{}
 	for _, o := range optimizations {
