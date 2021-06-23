@@ -1,5 +1,7 @@
 package planner
 
+import "time"
+
 type LogicalPlan interface {
 	List
 
@@ -10,16 +12,40 @@ type Expr interface {
 	isExpr()
 }
 
-type NumberExpr struct {
+type BoolExpr struct {
 	Expr
 
-	Value int
+	Value bool
 }
 
-type LiteralExpr struct {
+type Int64Expr struct {
+	Expr
+
+	Value int64
+}
+
+type Float64Expr struct {
+	Expr
+
+	Value float64
+}
+
+type BytesExpr struct {
+	Expr
+
+	Value []byte
+}
+
+type StringExpr struct {
 	Expr
 
 	Value string
+}
+
+type TimestampExpr struct {
+	Expr
+
+	Value time.Time
 }
 
 type Scan struct {
@@ -87,7 +113,7 @@ type EqualityFilter struct {
 	Filter
 
 	Column Expr
-	Value  interface{}
+	Value  Expr
 }
 
 type Selection struct {
