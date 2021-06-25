@@ -21,12 +21,6 @@ type Catalog struct {
 	diskManager sdb.DiskManager `json:"-"`
 }
 
-func NewEmptyCatalog() *Catalog {
-	return &Catalog{
-		Tables: map[string]*schema.Table{},
-	}
-}
-
 func New(dm sdb.DiskManager) (*Catalog, error) {
 	var c Catalog
 	if err := dm.Load("__catalog.db", 0, &c); err != nil {
@@ -34,7 +28,7 @@ func New(dm sdb.DiskManager) (*Catalog, error) {
 	}
 
 	if len(c.Tables) == 0 {
-		return NewEmptyCatalog(), nil
+		c = Catalog{Tables: map[string]*schema.Table{}}
 	}
 
 	c.diskManager = dm
