@@ -48,7 +48,7 @@ func (c *Catalog) AddTable(table string, columns []*schema.ColumnDef, indices []
 		return fmt.Errorf("table %s already exists", table)
 	}
 
-	c.Tables[table] = &schema.Table{Columns: columns, Indices: indices}
+	c.Tables[table] = &schema.Table{Name: table, Columns: columns, Indices: indices}
 
 	return nil
 }
