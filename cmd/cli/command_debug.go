@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/dty1er/sdb/btree"
+	"github.com/dty1er/sdb/catalog"
 	"github.com/dty1er/sdb/engine"
 )
 
@@ -51,6 +52,8 @@ func (dc *DebugCommand) Run() error {
 		return dc.showIndex()
 	case "pg", "page":
 		return dc.showPage()
+	case "ct", "catalog":
+		return dc.showCatalog()
 	default:
 		return nil
 	}
@@ -72,8 +75,40 @@ func (dc *DebugCommand) showPageDirectory() error {
 		return fmt.Errorf("deserialize json file %s, %w", filename, err)
 	}
 
+	j, err := json.MarshalIndent(&pd, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal %s, %w", filename, err)
+	}
+
 	fmt.Printf("=======Debug: PageDirectory (%s)\n", filename)
-	fmt.Println(&pd)
+	fmt.Println(string(j))
+	fmt.Printf("=======\n")
+	return nil
+}
+
+func (dc *DebugCommand) showCatalog() error {
+	filename := path.Join("./db", "__catalog.db")
+	if _, err := os.Stat(filename); err != nil {
+		return fmt.Errorf("catalog file does not exist")
+	}
+
+	file, err := os.OpenFile(filename, os.O_RDONLY, 0755)
+	if err != nil {
+		return fmt.Errorf("open file %s, %w", filename, err)
+	}
+
+	var c catalog.Catalog
+	if err := json.NewDecoder(file).Decode(&c); err != nil {
+		return fmt.Errorf("deserialize json file %s, %w", filename, err)
+	}
+
+	j, err := json.MarshalIndent(&c, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal %s, %w", filename, err)
+	}
+
+	fmt.Printf("=======Debug: Catalog (%s)\n", filename)
+	fmt.Println(string(j))
 	fmt.Printf("=======\n")
 	return nil
 }
