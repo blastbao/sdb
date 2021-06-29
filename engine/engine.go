@@ -41,7 +41,7 @@ func New(conf *config.Server, catalog sdb.Catalog, diskManager sdb.DiskManager) 
 	}
 
 	// Load Page directory
-	pageDirectory := &PageDirectory{}
+	pageDirectory := NewPageDirectory()
 	if err := diskManager.Load("__page_directory.db", 0, pageDirectory); err != nil {
 		return nil, err
 	}
