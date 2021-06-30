@@ -177,7 +177,7 @@ func (p *Page) String() string {
 		if err := t.Deserialize(bytes.NewReader(p.bs[slot.offset : slot.offset+slot.length])); err != nil {
 			panic(err)
 		}
-		sb.WriteString(fmt.Sprintf("%v\n", t))
+		sb.WriteString(fmt.Sprintf("%v\n", &t))
 	}
 	sb.WriteString("  },\n")
 	sb.WriteString("}\n")
