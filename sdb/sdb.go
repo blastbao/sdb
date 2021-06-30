@@ -35,9 +35,9 @@ type Error struct {
 
 type ResultSet struct {
 	Message string
-	Columns []string   // empty when insert, update, delete
-	Values  [][]string // empty when insert, update, delete
-	Count   int        // empty when insert
+	Columns []string // empty when insert, update, delete
+	Values  []Tuple  // empty when insert, update, delete
+	Count   int      // empty when insert
 }
 
 func New(parser Parser, planner Planner, catalog Catalog, executor Executor, engine Engine, diskManager DiskManager) *SDB {
@@ -80,23 +80,7 @@ func (sdb *SDB) ExecuteQuery(param *Parameter) *Result {
 		}
 	}
 
-	successResp := &Result{
-		Code: "OK",
-		RS: &ResultSet{
-			Message: result.RS.Message,
-		},
-	}
-
-	// switch stmt.Typ {
-	// case parser.SELECT_STMT:
-	// 	successResp.RS.Columns = result.Columns
-	// 	successResp.RS.Values = result.Values
-	// 	successResp.RS.Count = result.Count
-	// case parser.UPDATE_STMT, parser.DELETE_STMT:
-	// 	successResp.RS.Count = result.Count
-	// }
-
-	return successResp
+	return result
 }
 
 func (sdb *SDB) Shutdown() error {

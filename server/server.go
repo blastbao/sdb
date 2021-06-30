@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/dty1er/sdb/engine"
 	"github.com/dty1er/sdb/sdb"
 )
 
@@ -21,17 +22,19 @@ type Server struct {
 }
 
 func New(sdb SDB, port int) *Server {
-	svr := &Server{}
+	svr := &Server{sdb: sdb}
 
 	server := &http.Server{}
 	server.Addr = fmt.Sprintf(":%d", port)
+
+	svr.server = server
 
 	mux := http.NewServeMux()
 	mux.Handle("/execute", svr.sdbHandler())
 
 	server.Handler = mux
 
-	return &Server{server: server, sdb: sdb}
+	return svr
 }
 
 type Request struct {
@@ -50,9 +53,9 @@ type Error struct {
 
 type ResultSet struct {
 	Message string
-	Columns []string   // empty when insert, update, delete
-	Values  [][]string // empty when insert, update, delete
-	Count   int        // empty when insert
+	Columns []string        // empty when insert, update, delete
+	Values  []*engine.Tuple // empty when insert, update, delete
+	Count   int             // empty when insert
 }
 
 func (s *Server) sdbHandler() http.Handler {
@@ -83,8 +86,23 @@ func (s *Server) sdbHandler() http.Handler {
 			return
 		}
 
+		vals := []*engine.Tuple{}
+		for _, t := range resp.RS.Values {
+			tpl := t.(*engine.Tuple)
+			vals = append(vals, tpl)
+		}
+
+		res := &Response{
+			Code: "OK",
+			RS: &ResultSet{
+				Message: resp.RS.Message,
+				Columns: resp.RS.Columns,
+				Values:  vals,
+				Count:   resp.RS.Count,
+			},
+		}
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(&resp); err != nil {
+		if err := json.NewEncoder(w).Encode(&res); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			resp := Response{
 				Code:  "NG",
