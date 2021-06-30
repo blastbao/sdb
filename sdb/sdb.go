@@ -2,7 +2,12 @@ package sdb
 
 import (
 	"fmt"
+	"time"
 )
+
+func init() {
+	time.Local = time.UTC
+}
 
 type SDB struct {
 	parser      Parser
