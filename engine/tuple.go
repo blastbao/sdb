@@ -253,8 +253,37 @@ func (t *Tuple) String() string {
 	return sb.String()
 }
 
+func (t *Tuple) Projection(indices []int) sdb.Tuple {
+	vals := []interface{}{}
+	keyIndex := 0
+	for index := range indices {
+		data := t.Data[index]
+		if data.Key {
+			keyIndex = index
+		}
+		switch data.Typ {
+		case Bool:
+			vals = append(vals, data.BoolVal)
+		case Int64:
+			vals = append(vals, data.Int64Val)
+		case Float64:
+			vals = append(vals, data.Float64Val)
+		case Bytes:
+			vals = append(vals, data.BytesVal)
+		case String:
+			vals = append(vals, data.StringVal)
+		case Timestamp:
+			// Because timestamp is internally stored as int64, decodes into time.Time to keep the type
+			// in projected tuple as well
+			vals = append(vals, time.Unix(data.TimestampVal, 0))
+		}
+	}
+
+	return NewTuple(vals, keyIndex)
+}
+
 // Less satisfies btree.Item interface
-func (t *Tuple) Less(than btree.Item) bool {
+func (t *Tuple) Less(than sdb.Tuple) bool {
 	thanT := than.(*Tuple)
 	for _, data := range t.Data {
 		if data.Key {

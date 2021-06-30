@@ -1,10 +1,12 @@
 package planner
 
-import "time"
+import (
+	"time"
+
+	"github.com/dty1er/sdb/sdb"
+)
 
 type LogicalPlan interface {
-	List
-
 	isLogicalPlan()
 }
 
@@ -49,9 +51,12 @@ type TimestampExpr struct {
 }
 
 type Scan struct {
-	LogicalPlan
+	List
 
 	Table *Table
+
+	tuples []sdb.Tuple
+	idx    int
 }
 
 type Column struct {
@@ -73,14 +78,14 @@ type Projection struct {
 }
 
 type Limit struct {
-	LogicalPlan
+	List
 
 	Limit Expr
 	Input List
 }
 
 type OrderBy struct {
-	LogicalPlan
+	List
 
 	Columns     []Expr
 	Directirons []string
@@ -89,6 +94,8 @@ type OrderBy struct {
 
 type List interface {
 	isList()
+	Next(engine sdb.Engine) sdb.Tuple
+	Process(t sdb.Tuple) sdb.Tuple
 }
 
 type Table struct {
@@ -117,8 +124,29 @@ type EqualityFilter struct {
 }
 
 type Selection struct {
-	LogicalPlan
+	List
 
 	Filter Filter
 	Input  List
+}
+
+func (s *Scan) Next(engine sdb.Engine) sdb.Tuple {
+	if len(s.tuples) == 0 {
+		ts, err := engine.ReadTable(s.Table.Name)
+		if err != nil {
+			panic(err)
+		}
+
+		s.tuples = ts
+	}
+	if s.idx >= len(s.tuples) {
+		return nil
+	}
+	t := s.tuples[s.idx]
+	s.idx++
+	return t
+}
+
+func (s *Scan) Process(t sdb.Tuple) sdb.Tuple {
+	return t
 }

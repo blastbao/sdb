@@ -47,7 +47,55 @@ func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {
 		}
 	}
 
-	return &sdb.Result{RS: &sdb.ResultSet{Message: "record successfully inserted"}}, nil
+	return &sdb.Result{Code: "OK", RS: &sdb.ResultSet{Message: "record successfully inserted"}}, nil
+}
+
+func (e *Executor) execSelect(plan *planner.SelectPlan) (*sdb.Result, error) {
+	tbl := "users"
+	resultSet := []sdb.Tuple{}
+	pj := plan.LogicalPlan.(*planner.Projection)
+	for {
+		tuple := pj.Input.Next(e.engine)
+		if tuple == nil {
+			break
+		}
+
+		t := pj.Input.Process(tuple)
+		if t != nil {
+			resultSet = append(resultSet, t)
+		}
+	}
+
+	// do projection
+	projectionCols := []string{}
+	for _, col := range pj.Columns {
+		c := col.(*planner.Column)
+		projectionCols = append(projectionCols, c.Name)
+	}
+
+	projectionColIndices := []int{}
+	for i, colDef := range e.catalog.GetTable(tbl).Columns {
+		for _, col := range projectionCols {
+			if colDef.Name == col {
+				projectionColIndices = append(projectionColIndices, i)
+			}
+		}
+	}
+
+	rs := []sdb.Tuple{}
+	for _, result := range resultSet {
+		rs = append(rs, result.Projection(projectionColIndices))
+	}
+
+	return &sdb.Result{
+		Code: "OK",
+		RS: &sdb.ResultSet{
+			Message: "successfully fetched records",
+			Columns: projectionCols,
+			Values:  rs,
+			Count:   len(rs),
+		},
+	}, nil
 }
 
 func (e *Executor) Execute(plan sdb.Plan) (*sdb.Result, error) {
@@ -56,6 +104,8 @@ func (e *Executor) Execute(plan sdb.Plan) (*sdb.Result, error) {
 		return e.execCreateTable(p)
 	case *planner.InsertPlan:
 		return e.execInsert(p)
+	case *planner.SelectPlan:
+		return e.execSelect(p)
 	default:
 		return nil, fmt.Errorf("unexpected statement type")
 	}

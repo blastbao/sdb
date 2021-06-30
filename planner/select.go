@@ -14,10 +14,6 @@ type SelectPlan struct {
 	LogicalPlan LogicalPlan
 }
 
-type Optimization interface {
-	Apply(plan LogicalPlan) LogicalPlan
-}
-
 // PlanSelect makes a plan to query data by given SELECT statement.
 func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 	// PlanSelect consists of 2 parts.
@@ -27,7 +23,7 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 	// For example, it can convert a logical plan "scan `mytable`" to use index.
 	// We call optimizations-applied plan as "physical plan".
 
-	var lp LogicalPlan
+	var list List
 
 	// plan from
 	ate := stmt.From.(*parser.AliasedTableExpr)
@@ -36,7 +32,7 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 		Table: &Table{Name: tbl.Name, Alias: ate.As},
 	}
 
-	lp = sc
+	list = sc
 
 	// plan where
 	if stmt.Where != nil {
@@ -74,7 +70,7 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 		}
 
 		s := &Selection{Filter: f, Input: sc}
-		lp = s
+		list = s
 	}
 
 	// plan order by
@@ -89,8 +85,8 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 			ob.Directirons[i] = o.Direction.String()
 		}
 
-		ob.Input = lp
-		lp = ob
+		ob.Input = list
+		list = ob
 	}
 
 	// plan limit
@@ -98,9 +94,9 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 		l := &Limit{Limit: &Int64Expr{Value: int64(stmt.Limit.Count)}}
 		o := &Offset{Offset: &Int64Expr{Value: int64(stmt.Limit.Offset)}}
 
-		o.Input = lp
+		o.Input = list
 		l.Input = o
-		lp = l
+		list = l
 	}
 
 	// plan columns (projection)
@@ -119,17 +115,9 @@ func (p *Planner) PlanSelect(stmt *parser.SelectStatement) *SelectPlan {
 		}
 	}
 
-	pj.Input = lp
-	lp = pj
+	pj.Input = list
 
-	optimizations := []Optimization{}
-	for _, o := range optimizations {
-		lp = p.applyOptimization(lp, o)
-	}
+	// TODO: apply optimizations
 
-	return &SelectPlan{LogicalPlan: lp}
-}
-
-func (p *Planner) applyOptimization(plan LogicalPlan, optimization Optimization) LogicalPlan {
-	return optimization.Apply(plan)
+	return &SelectPlan{LogicalPlan: pj}
 }
