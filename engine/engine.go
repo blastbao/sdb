@@ -140,8 +140,8 @@ func (e *Engine) ReadIndex(table, idxName string) *btree.BTree {
 	return e.bufferPool.readIndex(table, idxName)
 }
 
-func (e *Engine) ReadTable(table string) ([]*Tuple, error) {
-	tuples := []*Tuple{}
+func (e *Engine) ReadTable(table string) ([]sdb.Tuple, error) {
+	tuples := []sdb.Tuple{}
 	pageIDs := e.pageDirectory.GetPageIDs(table)
 	for _, pageID := range pageIDs {
 		page := e.bufferPool.GetPage(table, pageID)
