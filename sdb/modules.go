@@ -47,6 +47,8 @@ type Executor interface {
 type Tuple interface {
 	Serializer
 	Deserializer
+	Less(than Tuple) bool
+	Projection(colIndices []int) Tuple
 }
 
 type IndexKey interface {
@@ -90,6 +92,7 @@ type Engine interface {
 	CreateIndex(table, idxName string)
 	InsertTuple(table string, t Tuple) error
 	InsertIndex(table, idxName string, key IndexKey, t Tuple) error
+	ReadTable(table string) ([]Tuple, error)
 	Shutdown() error
 }
 
