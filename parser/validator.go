@@ -85,12 +85,12 @@ func (v *validator) validateInsertStmt(stmt *InsertStatement) error {
 	if len(stmt.Rows) > 1000 {
 		return fmt.Errorf("Inserting rows number exceeded the limit 1000: %d", len(stmt.Rows))
 	}
-	colLen := len(stmt.Columns)
-	for _, row := range stmt.Rows {
-		if len(row) != colLen {
-			return fmt.Errorf("row size %d must be the same as column length %d", len(row), colLen)
-		}
-	}
+	// colLen := len(stmt.Columns)
+	// for _, row := range stmt.Rows {
+	// 	if len(row) != colLen {
+	// 		return fmt.Errorf("row size %d must be the same as column length %d", len(row), colLen)
+	// 	}
+	// }
 
 	if !v.catalog.FindTable(stmt.Table) {
 		return fmt.Errorf("table %s does not exist", stmt.Table)
