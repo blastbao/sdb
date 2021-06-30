@@ -161,7 +161,9 @@ func (e *Engine) ReadTable(table string) ([]sdb.Tuple, error) {
 		if err != nil {
 			return nil, err
 		}
-		tuples = append(tuples, ts...)
+		for _, t := range ts {
+			tuples = append(tuples, t)
+		}
 	}
 
 	// default sort by key
