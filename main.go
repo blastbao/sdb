@@ -8,7 +8,11 @@ import (
 )
 
 var queries = []string{
-	"Create table users (id int64 primary key, name string);",
+	"Create table users (id int64 primary key, name string, verified bool, registered timestamp, height float64);",
+	`insert into users values (1, "user1", true, "2021-06-01 10:00:00", 175.3);`,
+	`insert into users values (2, "user2", false, "2021-06-01 11:00:00", 175.0);`,
+	`insert into users values (3, "user3", true, "2021-06-01 12:00:00", 175.3);`,
+	`select * from users;`,
 }
 
 func main() {
