@@ -26,7 +26,7 @@ func (e *Executor) execCreateTable(plan *planner.CreateTablePlan) (*sdb.Result, 
 		e.engine.CreateIndex(index.Table, index.Name)
 	}
 
-	return &sdb.Result{RS: &sdb.ResultSet{Message: "table is successfully created"}}, nil
+	return &sdb.Result{Code: "OK", RS: &sdb.ResultSet{Message: "table is successfully created"}}, nil
 }
 
 func (e *Executor) execInsert(plan *planner.InsertPlan) (*sdb.Result, error) {

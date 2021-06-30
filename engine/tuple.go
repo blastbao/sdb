@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dty1er/sdb/btree"
+	"github.com/dty1er/sdb/sdb"
 )
 
 // Tuple represents a row in a table. The size varies.
@@ -103,7 +103,7 @@ func NewTuple(values []interface{}, keyIndex int) *Tuple {
 			length := uint16(len([]byte(actual)))
 			t.Data[i] = &TupleData{Typ: String, Length: length, StringVal: actual}
 		case time.Time:
-			t.Data[i] = &TupleData{Typ: Timestamp, Length: 8, TimestampVal: actual.UnixNano()}
+			t.Data[i] = &TupleData{Typ: Timestamp, Length: 8, TimestampVal: actual.Unix()}
 		default:
 			fmt.Fprintf(os.Stdout, "[WARN] unexpected type in init tuple\n")
 		}
@@ -194,7 +194,7 @@ func (t *Tuple) Deserialize(r io.Reader) error {
 		case Bool:
 			d.Typ = Bool
 			b := bs[offset : offset+int(length)]
-			if b[0] == '0' {
+			if b[0] == 0 {
 				d.BoolVal = false
 			} else {
 				d.BoolVal = true
@@ -245,7 +245,7 @@ func (t *Tuple) String() string {
 		case String:
 			sb.WriteString(fmt.Sprintf("      (key: %v) (string) %v,\n", d.Key, d.StringVal))
 		case Timestamp:
-			sb.WriteString(fmt.Sprintf("      (key: %v) (timestamp) %v,\n", d.Key, time.Unix(0, d.TimestampVal).Format(time.RFC3339)))
+			sb.WriteString(fmt.Sprintf("      (key: %v) (timestamp) %v,\n", d.Key, time.Unix(d.TimestampVal, 0).Format(time.RFC3339)))
 		}
 	}
 	sb.WriteString("    },")
