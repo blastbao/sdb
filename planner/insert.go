@@ -27,6 +27,17 @@ func (p *Planner) PlanInsert(stmt *parser.InsertStatement) *InsertPlan {
 	values := [][]interface{}{}
 	indices := []*Indices{}
 
+	// Insert query with no specific columns is possible. e.g.
+	//   insert into users values (...)
+	// In this case, all the columns on the table should be the target columns.
+	if len(stmt.Columns) == 0 {
+		columns := make([]string, len(tableDef.Columns))
+		for i, colDef := range tableDef.Columns {
+			columns[i] = colDef.Name
+		}
+		stmt.Columns = columns
+	}
+
 	for _, row := range stmt.Rows {
 		vs, is := p.planInsertRow(tableDef, stmt.Columns, row)
 		values = append(values, vs)
