@@ -60,7 +60,7 @@ func ConvertValue(v string, t ColumnType) (interface{}, error) {
 		}
 		for _, layout := range layouts {
 			t, err := time.Parse(layout, v)
-			if err != nil {
+			if err == nil {
 				return t, nil
 			}
 		}
