@@ -121,12 +121,19 @@ func (v *validator) validateInsertStmt(stmt *InsertStatement) error {
 	return nil
 }
 
+func (v *validator) validateSelectStmt(stmt *SelectStatement) error {
+	// TODO: write something
+	return nil
+}
+
 func (v *validator) validate() error {
 	switch s := v.stmt.(type) {
 	case *CreateTableStatement:
 		return v.validateCreateTableStmt(s)
 	case *InsertStatement:
 		return v.validateInsertStmt(s)
+	case *SelectStatement:
+		return v.validateSelectStmt(s)
 	default:
 		return fmt.Errorf("unexpected statement type")
 	}
