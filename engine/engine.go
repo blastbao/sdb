@@ -76,6 +76,8 @@ func (e *Engine) InsertIndex(table, idxName string, k sdb.IndexKey, t sdb.Tuple)
 // InsertTuple inserts a record to the given table.
 func (e *Engine) InsertTuple(table string, t sdb.Tuple) error {
 	var pageID PageID
+
+	//
 	pageIDs := e.pageDirectory.GetPageIDs(table)
 	if len(pageIDs) == 0 {
 		// First record for the table. Insert a page
@@ -88,21 +90,30 @@ func (e *Engine) InsertTuple(table string, t sdb.Tuple) error {
 	}
 
 	for {
+
 		// first, make sure the page is on the buffer pool
+		// 查询页缓存
 		pageFound := e.bufferPool.FindPage(table, pageID)
+		// 缓存不存在
 		if !pageFound {
 			// if not found, put the page on the cache
+			// 查询页信息
 			loc, err := e.pageDirectory.GetPageLocation(table, pageID)
 			if err != nil {
 				// this must not happen
 				panic(fmt.Sprintf("page is not found in the page directory: %s", err))
 			}
+
+			// 从磁盘加载页
 			var p Page
 			if err := e.diskManager.Load(loc.Filename, int(loc.Offset), &p); err != nil {
 				return err
 			}
 
+			// 插入到缓存
 			evicted := e.bufferPool.InsertPage(table, &p)
+
+			// 将被淘汰页落盘
 			if evicted != nil {
 				loc, err := e.pageDirectory.GetPageLocation(table, evicted.GetID())
 				if err != nil {
@@ -115,11 +126,16 @@ func (e *Engine) InsertTuple(table string, t sdb.Tuple) error {
 		}
 
 		// try to append the tuple on the page
+		// 把 tuple 插入到页
 		appended := e.bufferPool.AppendTuple(table, pageID, t)
+
+		// 插入成功，结束
 		if appended {
 			// if append succeeds, finish
 			break
 		}
+
+		// 插入失败，创建新页并放入缓存
 
 		// if fail, init new page then try to use it
 		page := InitPage(uint32(pageID) + 1)
@@ -127,6 +143,7 @@ func (e *Engine) InsertTuple(table string, t sdb.Tuple) error {
 			return err
 		}
 
+		// 在下一次循环中，尝试插入到新页
 		pageID = page.GetID()
 	}
 
@@ -175,12 +192,17 @@ func (e *Engine) ReadTable(table string) ([]sdb.Tuple, error) {
 // insertPage inserts a given page in pageDirectory and buffer pool.
 func (e *Engine) insertPage(table string, page *Page) error {
 	e.pageDirectory.RegisterPage(table, page)
+
+	// 插入 LRU 缓存，返回被淘汰的页面
 	evicted := e.bufferPool.InsertPage(table, page)
+
 	if evicted != nil {
+		// 查询被淘汰页的位置
 		loc, err := e.pageDirectory.GetPageLocation(table, evicted.GetID())
 		if err != nil {
 			return err
 		}
+		// 将淘汰页刷盘，传入文件名、块偏移、页数据
 		if err = e.diskManager.Persist(loc.Filename, int(loc.Offset), evicted); err != nil {
 			return err
 		}

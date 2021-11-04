@@ -136,8 +136,8 @@ type IndexElement struct {
 }
 
 type Table struct {
-	Name            string
-	Columns         []*ColumnDef
-	Indices         []*Index
-	PrimaryKeyIndex int
+	Name            string			// 表名
+	Columns         []*ColumnDef	// 字段(列)
+	Indices         []*Index		// 索引
+	PrimaryKeyIndex int				// 主键
 }

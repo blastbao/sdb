@@ -55,6 +55,7 @@ type pageHeader struct {
 	slots       []*slot
 }
 
+// InitPage 创建并初始化内存页
 func InitPage(id uint32) *Page {
 	bs := [PageSize]byte{}
 	putUint32OnBytes(bs[0:], id)

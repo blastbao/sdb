@@ -13,7 +13,9 @@ type DiskManager struct {
 }
 
 func New(directory string) *DiskManager {
-	return &DiskManager{directory: directory}
+	return &DiskManager{
+		directory: directory,
+	}
 }
 
 func (dm *DiskManager) Load(name string, offset int, d sdb.Deserializer) error {
@@ -35,7 +37,8 @@ func (dm *DiskManager) Load(name string, offset int, d sdb.Deserializer) error {
 	return nil
 }
 
-func (dm *DiskManager) Persist(name string, offset int, s sdb.Serializer) error {
+func (dm *DiskManager) Persist(name string, offset int, page sdb.Serializer) error {
+	// 打开数据文件
 	filename := path.Join(dm.directory, name)
 	file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
@@ -43,10 +46,13 @@ func (dm *DiskManager) Persist(name string, offset int, s sdb.Serializer) error 
 	}
 	defer file.Close()
 
-	serialized, err := s.Serialize()
+	// 页序列化
+	serialized, err := page.Serialize()
 	if err != nil {
 		return fmt.Errorf("serialize %s: %w", filename, err)
 	}
+
+	// 写入页
 	if _, err = file.WriteAt(serialized, int64(offset)); err != nil {
 		return fmt.Errorf("write page on the file %s at %d: %w", filename, offset, err)
 	}

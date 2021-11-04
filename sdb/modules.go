@@ -101,7 +101,7 @@ type Serializer interface {
 	Serialize() ([]byte, error)
 }
 
-// Serializer can read r and deserialize the byte sequence into the object.
+// Deserializer can read r and deserialize the byte sequence into the object.
 type Deserializer interface {
 	Deserialize(r io.Reader) error
 }

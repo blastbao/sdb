@@ -46,6 +46,8 @@ func (pd *PageDirectory) GetPageIDs(table string) []PageID {
 
 func (pd *PageDirectory) RegisterPage(table string, page *Page) {
 	pdid := EncodePageDirectoryID(table, page.GetID())
+
+
 	ids := pd.PageIDs[table]
 	if len(ids) == 0 {
 		pd.PageIDs[table] = []PageID{page.GetID()}

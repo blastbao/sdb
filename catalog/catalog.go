@@ -11,12 +11,16 @@ import (
 	"github.com/dty1er/sdb/sdb"
 )
 
-// Catalog is a set of information/metadata about the sdb instance. It never contain actual data.
+// Catalog is a set of information/metadata about the sdb instance.
+//
+// It never contain actual data.
+//
 // Catalog must implement sdb.Catalog, Serializer and Deserializer interfaces.
+//
 type Catalog struct {
 	Tables map[string]*schema.Table
-	// FUTURE WORK: Add views, users, etc.
 
+	// FUTURE WORK: Add views, users, etc.
 	latch       sync.RWMutex    `json:"-"`
 	diskManager sdb.DiskManager `json:"-"`
 }
@@ -28,7 +32,9 @@ func New(dm sdb.DiskManager) (*Catalog, error) {
 	}
 
 	if len(c.Tables) == 0 {
-		c = Catalog{Tables: map[string]*schema.Table{}}
+		c = Catalog{
+			Tables: map[string]*schema.Table{},
+		}
 	}
 
 	c.diskManager = dm

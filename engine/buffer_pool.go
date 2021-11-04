@@ -37,6 +37,8 @@ func NewBufferPool(entryCount int, indices map[IndexKey]*btree.BTree) *BufferPoo
 }
 
 // cacheKey encodes the cache key from the given arguments.
+//
+//
 func (bp *BufferPool) cacheKey(tableName string, pageID PageID) string {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s___%d", tableName, pageID)))
 	return string(hash[:])
@@ -54,27 +56,36 @@ func (bp *BufferPool) FindPage(tableName string, pageID PageID) bool {
 }
 
 func (bp *BufferPool) GetPage(tableName string, pageID PageID) *Page {
+	// table:page
 	key := bp.cacheKey(tableName, pageID)
 	elem := bp.frames.Get(key)
 	if elem == nil {
 		return nil
 	}
-
 	return elem.(*pageDescriptor).page
 }
 
 // InsertPage inserts page in the cache.
 // When non-nil page is returned, it must be persisted on the disk.
 func (bp *BufferPool) InsertPage(tableName string, page *Page) *Page {
+	// 缓存键
 	key := bp.cacheKey(tableName, page.GetID())
-	// when inserting a new page, it is not persisted so dirty must be true
-	pd := &pageDescriptor{table: tableName, page: page, dirty: true}
 
+	// when inserting a new page, it is not persisted so dirty must be true
+	// 新插入的页一定是脏页
+	pd := &pageDescriptor{
+		table: tableName,
+		page: page,
+		dirty: true,
+	}
+
+	// 插入新页，返回被淘汰页
 	evicted := bp.frames.Set(key, pd)
 	if evicted == nil {
 		return nil
 	}
 
+	// 如果被淘汰的是脏页，需要返回，调用者会执行刷盘，否则返回 nil
 	evictedPageDescriptor := evicted.(*pageDescriptor)
 	if !evictedPageDescriptor.dirty {
 		return nil
@@ -90,6 +101,7 @@ func (bp *BufferPool) AppendTuple(tableName string, pageID PageID, tuple sdb.Tup
 	key := bp.cacheKey(tableName, pageID)
 
 	// First, try to fetch the page for the table from cache
+	// 查询页
 	elem := bp.frames.Get(key)
 	if elem == nil {
 		return false // when page is not found in the cache, return false
